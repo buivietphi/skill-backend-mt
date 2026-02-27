@@ -138,6 +138,42 @@ VERDICT: [APPROVE / REQUEST CHANGES / BLOCK]
 </think>
 ```
 
+### Multi-Part / Broad Request (RULE 10)
+```
+<think>
+REQUEST_TYPE: [fix-all | multi-task | vague-fix | scan-and-fix]
+USER_SAID: [exact user request — preserve original language]
+
+── SCOPE ANALYSIS ──
+IS_BROAD: [yes/no — does it say "all", "everywhere", "nhiều chỗ", "cho đúng"?]
+IS_MULTI_TASK: [yes/no — does it list multiple separate tasks?]
+IS_VAGUE: [yes/no — no specific file/line/module mentioned?]
+ESTIMATED_SCOPE: [1-3 files = small (just do it) | 4-10 = medium (work plan) | 10+ = large (checkpoint every module)]
+
+── DISCOVERY (mandatory if IS_BROAD or IS_VAGUE) ──
+SCAN_STRATEGY: [Grep pattern | Glob path | Read specific files]
+LOCATIONS_FOUND:
+  1. [file:line] — [issue description]
+  2. [file:line] — [issue description]
+  ...
+TOTAL_LOCATIONS: [N]
+MODULES_AFFECTED: [list of modules/areas]
+
+── WORK PLAN ──
+  Item 1: [description] — [files] — [dependency: none | depends on item N]
+  Item 2: [description] — [files] — [dependency: none | depends on item N]
+  ...
+
+── EXECUTION ORDER ──
+  [ordered list considering dependencies]
+  CHECKPOINT_AFTER: [which items trigger a checkpoint report]
+
+⛔ If ESTIMATED_SCOPE > small → MUST present work plan before coding
+⛔ If IS_VAGUE = yes → MUST clarify or scan before coding
+⛔ If IS_MULTI_TASK = yes → MUST split into discrete items
+</think>
+```
+
 ### Refactor
 ```
 <think>

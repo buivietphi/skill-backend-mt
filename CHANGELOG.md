@@ -7,6 +7,32 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.1.0] — 2026-02-28
+
+### Added
+- **RULE 10: DISCOVER BEFORE EXECUTE** — New cardinal rule for broad/multi-part requests
+- **Multi-Part Execution Protocol** (SKILL.md) — 3-phase workflow: Discover → Execute with checkpoints → Verify completion
+- **Discovery-Execute Workflow** (shared/ai-dlc-workflow.md) — Replaces AI-DLC for sweep/fix/update across existing code
+- **Scope Clarification Protocol** (SKILL.md) — Forces AI to clarify vague requests ("sửa cho đúng", "fix it properly")
+- **Multi-Task Splitting Protocol** (SKILL.md) — Splits "fix A, then B, then C" into discrete tracked items
+- **Completion Check** in Quality Gate — Verifies ALL work plan items done before saying "done"
+- **Multi-Part think template** (shared/prompt-engineering.md) — Auto-think for broad/vague/multi-task requests
+- **Task Router entries** for broad requests — "Fix all X", "sửa nhiều chỗ", "check and fix everything"
+
+### Changed
+- SKILL.md: 43,906 → 51,877 bytes (~12,970 tokens)
+- shared/ai-dlc-workflow.md: 4,836 → 9,371 bytes (~2,340 tokens)
+- shared/prompt-engineering.md: 10,347 → 11,718 bytes (~2,930 tokens)
+- Smart load budget: ~27,750 → ~30,080 tokens (23.5% of 128K)
+
+### Fixed
+- AI completing only partial work on broad requests ("fix many places" → now discovers ALL locations first)
+- AI stopping after 1-2 fixes when user asked for comprehensive changes
+- Missing checkpoint reports during multi-module work
+- No scope discovery before execution on "fix all X" type requests
+
+---
+
 ## [1.0.0] — 2026-02-27
 
 ### Core

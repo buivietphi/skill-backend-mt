@@ -80,9 +80,9 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 
 | File | Bytes | Tokens (÷4) | Priority |
 |------|------:|------------:|----------|
-| **SKILL.md** | 43,906 | ~10,980 | 1 — Auto-loaded |
+| **SKILL.md** | 51,877 | ~12,970 | 1 — Auto-loaded |
 | **shared/bug-detection.md** | 22,209 | ~5,550 | 3 — Auto-loaded |
-| **shared/prompt-engineering.md** | 10,347 | ~2,590 | 4 — Build tasks |
+| **shared/prompt-engineering.md** | 11,718 | ~2,930 | 4 — Build tasks |
 | **shared/code-review.md** | 26,528 | ~6,630 | 3 — Auto-loaded |
 | **php/laravel.md** | 9,031 | ~2,260 | 2 — If Laravel |
 | **java/spring-boot.md** | 8,977 | ~2,240 | 2 — If Spring Boot |
@@ -104,7 +104,7 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 | **shared/observability.md** | 6,100 | ~1,530 | 5 — On-demand |
 | **shared/testing-strategy.md** | 5,629 | ~1,410 | 5 — On-demand |
 | **shared/version-management.md** | 4,923 | ~1,230 | 5 — On-demand |
-| **shared/ai-dlc-workflow.md** | 4,836 | ~1,210 | 5 — On-demand |
+| **shared/ai-dlc-workflow.md** | 9,371 | ~2,340 | 5 — On-demand |
 | **shared/common-pitfalls.md** | 4,443 | ~1,110 | 5 — On-demand |
 | **shared/agent-rules-template.md** | 2,916 | ~730 | 6 — Init only |
 | **shared/document-analysis.md** | 2,236 | ~560 | 5 — On-demand |
@@ -115,28 +115,28 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 
 | Scenario | Tokens | % of 128K | Notes |
 |----------|-------:|----------:|-------|
-| SKILL.md only | ~10,980 | 8.6% | Minimal |
-| Core auto-load | ~25,750 | 20.1% | SKILL + bug-detection + prompt-eng + code-review |
-| **Smart load** (core + 1 framework) | **~27,750** | **21.7%** | **Recommended — 78% context free** |
-| Smart + 1 on-demand | ~30,250 | 23.6% | Typical task (fix bug, API design, etc.) |
-| Multi-framework (3 frameworks) | ~31,750 | 24.8% | Polyglot project |
-| All files | ~57,800 | 45.2% | Full audit mode |
+| SKILL.md only | ~12,970 | 10.1% | Minimal |
+| Core auto-load | ~28,080 | 21.9% | SKILL + bug-detection + prompt-eng + code-review |
+| **Smart load** (core + 1 framework) | **~30,080** | **23.5%** | **Recommended — 76% context free** |
+| Smart + 1 on-demand | ~32,580 | 25.5% | Typical task (fix bug, API design, etc.) |
+| Multi-framework (3 frameworks) | ~34,080 | 26.6% | Polyglot project |
+| All files | ~62,500 | 48.8% | Full audit mode |
 
 ---
 
 ## Smart Loading Protocol
 
 ```
-PRIORITY 1: SKILL.md (~9.8k tokens)
+PRIORITY 1: SKILL.md (~13.0k tokens)
   → Cardinal rules, task router, auto-detect, quality gate, security protocol
 
 PRIORITY 2: {framework}/{framework}.md (~1.6-2.3k tokens)
   → Framework-specific patterns, project structure, ORM, testing
 
-PRIORITY 3: shared/code-review.md + shared/bug-detection.md (~5.6k tokens)
+PRIORITY 3: shared/code-review.md + shared/bug-detection.md (~12.2k tokens)
   → Senior review checklist, auto bug scanner
 
-PRIORITY 4: shared/prompt-engineering.md (~2.2k tokens)
+PRIORITY 4: shared/prompt-engineering.md (~2.9k tokens)
   → Auto-think templates, advanced patterns
 
 PRIORITY 5-6: On-demand files (~0.5-4.6k tokens each)

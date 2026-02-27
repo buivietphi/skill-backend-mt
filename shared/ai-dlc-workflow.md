@@ -18,6 +18,146 @@ DON'T USE WHEN:
   ⛔ Simple CRUD endpoint (just scaffold directly)
   ⛔ Bug fix (use error recovery protocol)
   ⛔ Config change (just edit the file)
+  ⛔ Broad/multi-part requests → use Discovery-Execute Workflow below
+```
+
+---
+
+## Discovery-Execute Workflow
+
+> For broad requests that span multiple locations: "fix all X", "update everywhere", "sửa nhiều chỗ", "fix these issues".
+> This workflow replaces AI-DLC when the task is NOT a new feature but a sweep/fix/update across existing code.
+
+### When to Use
+
+```
+USE WHEN:
+  ✅ User says "fix all / update all / change everywhere / sửa nhiều chỗ"
+  ✅ User lists 3+ separate tasks in one message
+  ✅ User describes problem without specific location ("UI is broken", "it's not working right")
+  ✅ Fix/update will touch 5+ files across 2+ modules
+  ✅ User says "fix for correct" / "sửa cho đúng" without specifying what's wrong
+
+DON'T USE WHEN:
+  ⛔ Single-file fix with clear location → just fix it
+  ⛔ New feature creation → use AI-DLC above
+  ⛔ Single bug with stack trace → use bug-detection.md
+```
+
+### Phase D1: DISCOVER
+
+```
+GOAL: Find ALL locations that need changes BEFORE touching any code.
+
+STEP 1 — UNDERSTAND THE REQUEST
+  Parse user message into:
+    WHAT:  [what behavior/pattern/UI to change]
+    WHERE: [specific files? modules? entire project?]
+    WHY:   [bug? visual mismatch? requirements changed? refactor?]
+
+  If any field is UNKNOWN:
+    → Scan the area user described
+    → Or ask: "Which area/page/module is affected?"
+
+STEP 2 — SCAN & CATALOG
+  For "fix all X" type:
+    → Grep for the pattern across project
+    → List EVERY occurrence with file:line
+
+  For "fix this page/feature":
+    → Read all files in that area
+    → Run relevant Auto-Scan Categories (bug-detection.md)
+    → List ALL issues found (not just the first one)
+
+  For "fix A, B, and C" (multiple tasks):
+    → Split into discrete work items
+    → For each: locate the target files
+
+  CATALOG FORMAT:
+    WORK_ITEM_1: [description]
+      → [file:line] — [what's wrong / what to change]
+      → [file:line] — [what's wrong / what to change]
+    WORK_ITEM_2: [description]
+      → [file:line] — [what's wrong / what to change]
+    ...
+    TOTAL: [N] work items, [M] files, [K] modules
+
+STEP 3 — PRESENT WORK PLAN (mandatory — NEVER skip)
+  Show user the full catalog:
+    "I scanned [area] and found [N] items to fix:
+
+     **1. [Work item]** — [N files]
+       • file:line — [issue]
+       • file:line — [issue]
+
+     **2. [Work item]** — [N files]
+       • file:line — [issue]
+
+     **Total: [N] changes across [M] files**
+
+     Fix all? Or prioritize specific items?"
+
+  ⛔ NEVER start fixing without presenting the work plan
+  ⛔ NEVER say "I found some issues" — list ALL of them
+```
+
+### Phase D2: EXECUTE (with checkpoints)
+
+```
+EXECUTION RULES:
+  1. Work through items IN ORDER (or user-specified priority)
+  2. Complete one work item fully before starting the next
+  3. After each work item → mini Quality Gate (type check + lint)
+  4. After each MODULE boundary → CHECKPOINT report to user
+
+CHECKPOINT FORMAT:
+  "✅ Work item 1: [name] — DONE
+     • [file]: [what changed]
+
+   ⬜ Work item 2: [name] — NEXT
+   ⬜ Work item 3: [name] — PENDING
+
+   Progress: [X/N] items done. Continue?"
+
+WHEN TO CHECKPOINT (pick the first that applies):
+  □ After every module boundary (switching from module A to module B)
+  □ After every 5 file changes (if all in same module)
+  □ After completing a logical group of related changes
+  □ After any change that might break other things (shared types, interfaces)
+
+⛔ NEVER silently complete 10+ files without a checkpoint
+✅ User should ALWAYS know what was done and what's next
+```
+
+### Phase D3: VERIFY COMPLETION
+
+```
+AFTER all work items done:
+  □ Re-scan: Grep for the pattern again → any locations missed?
+  □ Compare: work plan said [N] items → actually completed [N]?
+  □ Run full Quality Gate (not per-item — full project)
+  □ Report any NEW issues discovered during fixes
+
+COMPLETION REPORT:
+  "All items complete:
+
+   ✅ Item 1: [summary] — [N files]
+   ✅ Item 2: [summary] — [N files]
+   ✅ Item 3: [summary] — [N files]
+
+   **Total: [X] files changed**
+   **Quality Gate: types ✅ | lint ✅ | tests ✅**
+
+   [If new issues found during work]:
+   ⚠️ [N] new issues discovered:
+     • [issue] — want me to fix?
+
+   [If items were skipped]:
+   ⏭️ [N] items skipped (reason: [why])
+     • [item] — blocked by [dependency]"
+
+⛔ NEVER say "done" if work plan count ≠ completed count
+⛔ NEVER skip the re-scan verification
 ```
 
 ---

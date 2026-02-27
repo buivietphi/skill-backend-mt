@@ -34,6 +34,7 @@ RULE 6: ENV PARITY — If it works in dev, verify in staging/production. Config,
 RULE 7: ASK AFTER 3 FAILS — 3 failed attempts at same error → STOP → present options to user. Never loop.
 RULE 8: SPEC BEFORE COMPLEX — Features spanning 3+ files REQUIRE written spec (Intent + Units + Dependencies) BEFORE any code. Read: shared/ai-dlc-workflow.md. Present spec to user for approval first.
 RULE 9: DATA INTEGRITY FIRST — NEVER run DROP/TRUNCATE/mass DELETE without explicit user confirmation. Destructive DB ops = "confirm?" → wait for yes → execute.
+RULE 10: DISCOVER BEFORE EXECUTE — For broad/multi-part requests ("fix all X", "update everywhere", "sửa nhiều chỗ"), DISCOVER all locations FIRST → present work plan → execute module-by-module → checkpoint after each module. NEVER start fixing and stop at 1-2 locations.
 ```
 
 ## When to Use
@@ -196,6 +197,24 @@ USER REQUEST                    → ACTION (Read tool required)
                                   then: choose pattern (server-translate / keys / multi-field)
                                   then: implement locale detection + DB schema
 
+── BROAD / MULTI-PART REQUESTS (RULE 10) ──────────────────────────
+
+"Fix all X" / "Update everywhere" → Multi-Part Execution Protocol below
+"sửa nhiều chỗ" / "fix many"       DISCOVER all locations FIRST → present work plan
+                                    → execute module-by-module → checkpoint after each
+
+"Fix X, Y, and Z" (multiple tasks) → Multi-Part Execution Protocol below
+"sửa A rồi sửa B rồi check C"     Split into numbered work items → execute sequentially
+                                    → checkpoint after each → report completion
+
+"Make X work correctly"             → If vague: Scope Clarification Protocol below
+"sửa cho đúng" / "fix it properly"  WHAT is wrong? → scan target → discover ALL issues
+                                    → present findings → fix with user approval
+
+"Check and fix everything"          → Discovery Protocol (scan → categorize → prioritize)
+"review rồi sửa luôn"              → present findings FIRST → ask which to fix
+                                    ⛔ NEVER auto-fix without presenting the full scope
+
 "API caching / CDN / ETags"     → Read: shared/api-design.md → HTTP Caching section
                                   Read: shared/performance-optimization.md → Caching Strategy
                                   then: set Cache-Control + ETag + CDN strategy per endpoint
@@ -265,6 +284,190 @@ When invoked as `@skill-backend-mt project`, you:
 7. **VERIFY** after scaffolding — compare new feature against reference (see STEP 5)
 8. **NEVER** suggest architecture changes or migrations
 9. **NEVER** use architecture-intelligence.md defaults — ONLY use what the project actually does
+
+---
+
+## Multi-Part Execution Protocol (RULE 10)
+
+**When user request is broad, vague, or spans multiple locations/modules.**
+
+### Trigger Detection
+
+```
+BROAD REQUEST SIGNALS — activate this protocol when ANY is true:
+  □ User says "all" / "everywhere" / "every" / "nhiều chỗ" / "toàn bộ"
+  □ User lists multiple tasks: "fix A, then B, then C"
+  □ User request implies scanning: "fix for correct", "sửa cho đúng", "make it work"
+  □ User describes symptoms without specific location: "UI is broken", "it's not right"
+  □ Request will clearly touch 5+ files across 2+ modules
+  □ Request combines different task types: "fix bugs AND update UI AND add feature"
+```
+
+### Phase 1: DISCOVER (before writing any code)
+
+```
+STEP 1 — SCOPE THE REQUEST
+  Parse user request into:
+    □ WHAT to change: [specific pattern / behavior / appearance]
+    □ WHERE to change: [specific files? specific modules? entire project?]
+    □ HOW MANY: [1 location? 5? 20? unknown?]
+
+  If WHERE is vague:
+    → Grep/Glob to find ALL affected locations
+    → Count them
+    → Categorize by module/area
+
+STEP 2 — BUILD WORK PLAN
+  Create numbered list of ALL work items:
+
+  WORK PLAN:
+    Module/Area 1: [name]
+      □ [file:line] — [what needs to change]
+      □ [file:line] — [what needs to change]
+    Module/Area 2: [name]
+      □ [file:line] — [what needs to change]
+    ...
+    TOTAL: [N] changes across [M] files in [K] modules
+
+STEP 3 — PRESENT TO USER (mandatory)
+  "I found [N] locations that need changes across [M] files:
+
+   **Module 1**: [name] — [N changes]
+     • [file:line]: [brief description]
+     • [file:line]: [brief description]
+
+   **Module 2**: [name] — [N changes]
+     • [file:line]: [brief description]
+
+   **Total: [N] changes in [M] files**
+
+   Should I fix all of them, or prioritize specific modules first?"
+
+  ⛔ NEVER skip this step — user must see full scope before you start fixing
+  ⛔ NEVER start fixing at random locations without the full picture
+```
+
+### Phase 2: EXECUTE (module-by-module)
+
+```
+EXECUTION ORDER:
+  1. Start with the module user cares about most (or ask if unclear)
+  2. Complete ALL changes within that module
+  3. Run Quality Gate for that module (type check + lint + tests)
+  4. → CHECKPOINT (report to user)
+  5. Move to next module
+  6. Repeat until all modules done
+
+CHECKPOINT FORMAT (after each module):
+  "✅ Module 1: [name] — DONE ([N] files changed)
+     • [file]: [what changed]
+     • [file]: [what changed]
+
+   ⬜ Module 2: [name] — NEXT ([N] changes pending)
+   ⬜ Module 3: [name] — PENDING ([N] changes pending)
+
+   Progress: [X/Y] modules complete. Continue?"
+
+PARALLEL EXECUTION (when safe):
+  ✅ Changes within same module → can batch
+  ✅ Independent files with no shared imports → can parallel
+  ⛔ Cross-module changes that affect shared types → sequential
+  ⛔ Changes that require running tests between → sequential
+```
+
+### Phase 3: VERIFY COMPLETION
+
+```
+AFTER all modules done:
+  □ Re-scan for any MISSED locations (Grep again)
+  □ Run FULL Quality Gate (not per-module — full project)
+  □ Compare: work plan items vs completed items
+    → Any items skipped? Flag them.
+    → Any NEW issues discovered during fixes? List them.
+
+COMPLETION REPORT:
+  "All changes complete:
+
+   ✅ Module 1: [N] files — done
+   ✅ Module 2: [N] files — done
+   ✅ Module 3: [N] files — done
+
+   **Total: [X] changes across [Y] files**
+   **Quality Gate: types ✅ | lint ✅ | tests ✅**
+
+   [If new issues found]:
+   ⚠️ Found [N] additional issues during fixes:
+     • [issue 1]
+     • [issue 2]
+   Want me to fix these too?"
+
+⛔ NEVER say "done" if work plan has unchecked items
+⛔ NEVER skip the re-scan — you might have missed locations
+✅ ALWAYS compare original work plan count vs actual changes made
+```
+
+### Scope Clarification Protocol
+
+```
+WHEN request is too vague to build a work plan:
+
+  User: "sửa cho đúng" / "fix it" / "make it work correctly"
+
+  STEP 1: ASK what "correct" means
+    "What specific behavior is wrong? I need to understand:
+     1. What is it doing NOW? (current behavior)
+     2. What SHOULD it do? (expected behavior)
+     3. Which area/page/endpoint is affected?"
+
+  STEP 2: If user describes symptoms (not locations)
+    → Scan the described area
+    → List ALL issues found
+    → Ask user to confirm which are the ones to fix
+
+  STEP 3: If user gives location but not specifics
+    "I'll scan [location] and report what I find."
+    → Run Health Check Protocol (bug-detection.md)
+    → Present findings → ask which to fix
+
+  ⛔ NEVER guess what "fix it" means — ALWAYS clarify or scan first
+  ⛔ NEVER fix 1 thing and assume that was the user's intent
+```
+
+### Multi-Task Splitting Protocol
+
+```
+WHEN user gives multiple tasks in one message:
+
+  User: "fix the login bug, then update the UI, then add validation"
+
+  STEP 1: SPLIT into discrete tasks
+    Task 1: Fix login bug
+    Task 2: Update UI
+    Task 3: Add validation
+
+  STEP 2: ORDER by dependency
+    → Does Task 2 depend on Task 1? If yes → sequential
+    → Independent tasks → can reorder by priority
+
+  STEP 3: EXECUTE one at a time
+    → Start Task 1
+    → Quality Gate Task 1
+    → CHECKPOINT: "Task 1 done. Starting Task 2."
+    → Start Task 2
+    → Quality Gate Task 2
+    → CHECKPOINT: "Task 2 done. Starting Task 3."
+    → ...
+
+  STEP 4: FINAL REPORT
+    "All tasks complete:
+     ✅ Task 1: [summary]
+     ✅ Task 2: [summary]
+     ✅ Task 3: [summary]"
+
+  ⛔ NEVER do all tasks silently and only report at the end
+  ⛔ NEVER skip a task because you forgot — use the task list
+  ⛔ NEVER combine tasks that should be separate changes
+```
 
 ---
 
@@ -621,6 +824,18 @@ STEP 8: If 3+ different fixes all fail → STOP debugging → question the archi
    - READ full output + exit code (don't assume success)
    - No hedging: "should work" / "probably fixed" → run it and PROVE it
    - Bug fix test must FAIL without fix → PASS with fix
+
+✅ COMPLETION CHECK (for multi-part requests — RULE 10):
+   - Was the original request broad? ("fix all", "update everywhere", "sửa nhiều chỗ")
+     → Did I create a work plan? Compare plan items vs completed items.
+     → Any items I skipped or forgot? Go back and finish them.
+   - Did user list multiple tasks? ("fix A, then B, then C")
+     → Check EACH task individually. ALL must be done.
+   - Re-scan: Grep for the pattern I was fixing → any locations I missed?
+   - Count: work plan said [N] locations → I actually changed [N] locations?
+     → If fewer → I'm NOT done. Find the missing ones.
+   ⛔ NEVER say "done" if work plan has unchecked items
+   ⛔ NEVER assume partial completion = full completion
 ```
 
 ### Self-Critique Loop
@@ -962,10 +1177,10 @@ DEPENDENT TASKS → Run sequentially:
 **Complete file inventory (bytes ÷ 4 = tokens):**
 
 ```
-CORE (auto-loaded — ~25,750 tokens total):
-  SKILL.md                              43,906 bytes  ~10,980 tokens
+CORE (auto-loaded — ~28,080 tokens total):
+  SKILL.md                              51,877 bytes  ~12,970 tokens
   shared/bug-detection.md               22,209 bytes   ~5,550 tokens
-  shared/prompt-engineering.md          10,347 bytes   ~2,590 tokens
+  shared/prompt-engineering.md          11,718 bytes   ~2,930 tokens
   shared/code-review.md                 26,528 bytes   ~6,630 tokens
 
 FRAMEWORK (load ONE per project — ~1,600-2,300 tokens):
@@ -991,7 +1206,7 @@ SHARED (on-demand — ~560-4,620 tokens each):
   shared/observability.md                6,100 bytes  ~1,530 tokens
   shared/testing-strategy.md             5,629 bytes  ~1,410 tokens
   shared/version-management.md           4,923 bytes  ~1,230 tokens
-  shared/ai-dlc-workflow.md              4,836 bytes  ~1,210 tokens
+  shared/ai-dlc-workflow.md              9,371 bytes  ~2,340 tokens
   shared/common-pitfalls.md              4,443 bytes  ~1,110 tokens
   shared/agent-rules-template.md         2,916 bytes    ~730 tokens
   shared/document-analysis.md            2,236 bytes    ~560 tokens
@@ -1000,6 +1215,6 @@ SHARED (on-demand — ~560-4,620 tokens each):
 HUMANIZER:
   humanizer/humanizer-backend.md         3,923 bytes    ~980 tokens
 
-TOTAL: ~289,900 bytes (~57,800 tokens if all loaded)
-SMART LOAD: ~27,750 tokens (21.7% of 128K — 78% context free for code)
+TOTAL: ~299,800 bytes (~62,500 tokens if all loaded)
+SMART LOAD: ~30,080 tokens (23.5% of 128K — 76% context free for code)
 ```

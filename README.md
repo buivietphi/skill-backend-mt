@@ -108,7 +108,7 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 - Deployment strategies (blue-green, canary, rolling)
 
 ### Advanced AI Patterns
-- Cardinal Rules (9 inviolable rules for code quality)
+- Cardinal Rules (10 inviolable rules for code quality)
 - Self-Critique Loop (re-read and verify before presenting)
 - Context Staleness Rule (re-read files after 5 messages)
 - Verification-First Pattern (read before suggesting)
@@ -120,9 +120,11 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 - Session State Tracking (never lose track of multi-file tasks)
 - Grounding Protocol (anti-hallucination with source hierarchy)
 - AI-DLC Workflow (4 Hats for complex features)
+- Multi-Part Execution Protocol (discover all locations → work plan → checkpoint)
+- Discovery-Execute Workflow (for "fix all X" / broad requests)
 
 ### Intelligent Prompt Engineering
-- Auto-think templates (Fix/Debug, Build/Create, Review, Refactor)
+- Auto-think templates (Fix/Debug, Build/Create, Review, Refactor, Multi-Part)
 - Source verification checklist
 - Context-needed declarations
 - Patterns learned from: Anthropic, Cursor, Lovable, Manus, Windsurf, Kiro, Replit system prompts
@@ -133,26 +135,26 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 
 | Scenario | Tokens | % of 128K |
 |----------|-------:|----------:|
-| SKILL.md only | ~10,980 | 8.6% |
-| Core auto-load | ~25,750 | 20.1% |
-| **Smart load** (core + 1 framework) | **~27,750** | **21.7%** |
-| Multi-framework (3 frameworks) | ~31,750 | 24.8% |
-| Full load (all files) | ~57,800 | 45.2% |
+| SKILL.md only | ~12,970 | 10.1% |
+| Core auto-load | ~28,080 | 21.9% |
+| **Smart load** (core + 1 framework) | **~30,080** | **23.5%** |
+| Multi-framework (3 frameworks) | ~34,080 | 26.6% |
+| Full load (all files) | ~62,500 | 48.8% |
 
-**Smart loading uses only 22% of context** — 78% free for actual code work.
+**Smart loading uses only 23.5% of context** — 76% free for actual code work.
 
 ### Per-File Breakdown (bytes ÷ 4)
 
 | File | Bytes | Tokens |
 |------|------:|-------:|
-| SKILL.md | 43,906 | ~10,980 |
+| SKILL.md | 51,877 | ~12,970 |
 | shared/code-review.md | 26,528 | ~6,630 |
 | shared/bug-detection.md | 22,209 | ~5,550 |
 | shared/architecture-intelligence.md | 18,494 | ~4,620 |
 | shared/api-design.md | 11,386 | ~2,850 |
 | shared/error-recovery.md | 11,096 | ~2,770 |
 | shared/database-patterns.md | 10,789 | ~2,700 |
-| shared/prompt-engineering.md | 10,347 | ~2,590 |
+| shared/prompt-engineering.md | 11,718 | ~2,930 |
 | php/laravel.md | 9,031 | ~2,260 |
 | java/spring-boot.md | 8,977 | ~2,240 |
 | python/fastapi.md | 8,616 | ~2,150 |
@@ -169,7 +171,7 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 | shared/observability.md | 6,100 | ~1,530 |
 | shared/testing-strategy.md | 5,629 | ~1,410 |
 | shared/version-management.md | 4,923 | ~1,230 |
-| shared/ai-dlc-workflow.md | 4,836 | ~1,210 |
+| shared/ai-dlc-workflow.md | 9,371 | ~2,340 |
 | shared/common-pitfalls.md | 4,443 | ~1,110 |
 | humanizer/humanizer-backend.md | 3,923 | ~980 |
 | shared/agent-rules-template.md | 2,916 | ~730 |
