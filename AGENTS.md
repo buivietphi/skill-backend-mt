@@ -1,0 +1,168 @@
+# AGENTS.md — Multi-Agent Compatibility
+
+> skill-backend-mt works with 12 AI agents. This file describes how each agent loads the skill.
+> Updated from research of top 53k+ star skill repos. Cardinal rules, self-critique loops, leverage pyramid, verification-first.
+
+---
+
+## Quick Start
+
+```bash
+# Install to your AI agent
+npx @buivietphi/skill-backend-mt              # Interactive checkbox UI
+npx @buivietphi/skill-backend-mt --claude     # Claude Code
+npx @buivietphi/skill-backend-mt --codex      # Codex
+npx @buivietphi/skill-backend-mt --gemini     # Gemini CLI
+npx @buivietphi/skill-backend-mt --all        # All detected agents
+
+# Generate project-level rules
+npx @buivietphi/skill-backend-mt --init           # Interactive
+npx @buivietphi/skill-backend-mt --init cursor     # Just Cursor
+npx @buivietphi/skill-backend-mt --init all        # All agents
+```
+
+---
+
+## Agent Compatibility Matrix
+
+| Agent | Loading Method | Install Command |
+|-------|---------------|----------------|
+| **Claude Code** | `~/.claude/skills/` | `npx skill-backend-mt --claude` |
+| **Cline** | `.clinerules/` in project | `npx skill-backend-mt --init cline` |
+| **Roo Code** | `.roo/rules/` in project | `npx skill-backend-mt --init roocode` |
+| **Cursor** | `.cursorrules` in project | `npx skill-backend-mt --init cursor` |
+| **Windsurf** | `.windsurfrules` in project | `npx skill-backend-mt --init windsurf` |
+| **Copilot** | `.github/copilot-instructions.md` | `npx skill-backend-mt --init copilot` |
+| **Codex** | `~/.codex/skills/` | `npx skill-backend-mt --codex` |
+| **Gemini CLI** | `~/.gemini/skills/` | `npx skill-backend-mt --gemini` |
+| **Kimi** | `~/.kimi/skills/` | `npx skill-backend-mt --kimi` |
+| **Kilo Code** | `.kilocode/rules/` in project | `npx skill-backend-mt --init kilocode` |
+| **Kiro** | `.kiro/steering/` in project | `npx skill-backend-mt --init kiro` |
+| **Antigravity** | `~/.agents/skills/` | `npx skill-backend-mt --antigravity` |
+
+---
+
+## Two Types of Agents
+
+### Skills-Directory Agents
+**Claude Code, Codex, Gemini CLI, Kimi, Antigravity**
+
+These agents load skills from a global directory:
+```
+~/.claude/skills/skill-backend-mt/
+~/.codex/skills/skill-backend-mt/
+~/.gemini/skills/skill-backend-mt/
+~/.kimi/skills/skill-backend-mt/
+~/.agents/skills/skill-backend-mt/
+```
+
+The full skill folder is installed with all subfolders. The agent loads `SKILL.md` first, then reads additional files on-demand via the Read tool.
+
+### Project-Level Agents
+**Cursor, Windsurf, Cline, Roo Code, Copilot, Kilo Code, Kiro**
+
+These agents load rules from project-level files. Run `--init` to generate auto-detected rules files in your project root:
+```
+.cursorrules                    → Cursor
+.windsurfrules                  → Windsurf
+.clinerules/backend-rules.md   → Cline
+.roo/rules/backend-rules.md    → Roo Code
+.github/copilot-instructions.md → Copilot
+.kilocode/rules/backend-rules.md → Kilo Code
+.kiro/steering/backend-rules.md  → Kiro
+```
+
+---
+
+## Token Budget
+
+### Per-File Token Counts
+
+| File | Bytes | Tokens (÷4) | Priority |
+|------|------:|------------:|----------|
+| **SKILL.md** | 43,906 | ~10,980 | 1 — Auto-loaded |
+| **shared/bug-detection.md** | 22,209 | ~5,550 | 3 — Auto-loaded |
+| **shared/prompt-engineering.md** | 10,347 | ~2,590 | 4 — Build tasks |
+| **shared/code-review.md** | 26,528 | ~6,630 | 3 — Auto-loaded |
+| **php/laravel.md** | 9,031 | ~2,260 | 2 — If Laravel |
+| **java/spring-boot.md** | 8,977 | ~2,240 | 2 — If Spring Boot |
+| **python/fastapi.md** | 8,616 | ~2,150 | 2 — If FastAPI |
+| **python/django.md** | 8,143 | ~2,040 | 2 — If Django |
+| **nodejs/nestjs.md** | 7,922 | ~1,980 | 2 — If NestJS |
+| **nodejs/nextjs.md** | 7,720 | ~1,930 | 2 — If Next.js |
+| **nodejs/vuejs.md** | 7,139 | ~1,790 | 2 — If Vue.js/Nuxt |
+| **others/go-ruby-rust.md** | 7,195 | ~1,800 | 2 — If Go/Ruby/Rust |
+| **nodejs/express.md** | 6,257 | ~1,560 | 2 — If Express/Fastify |
+| **shared/architecture-intelligence.md** | 18,494 | ~4,620 | 5 — On-demand |
+| **shared/api-design.md** | 11,386 | ~2,850 | 5 — On-demand |
+| **shared/error-recovery.md** | 11,096 | ~2,770 | 5 — On-demand |
+| **shared/database-patterns.md** | 10,789 | ~2,700 | 5 — On-demand |
+| **shared/auth-security.md** | 7,469 | ~1,870 | 5 — On-demand |
+| **shared/performance-optimization.md** | 7,267 | ~1,820 | 5 — On-demand |
+| **shared/microservices.md** | 7,179 | ~1,800 | 5 — On-demand |
+| **shared/ci-cd.md** | 7,051 | ~1,760 | 5 — On-demand |
+| **shared/observability.md** | 6,100 | ~1,530 | 5 — On-demand |
+| **shared/testing-strategy.md** | 5,629 | ~1,410 | 5 — On-demand |
+| **shared/version-management.md** | 4,923 | ~1,230 | 5 — On-demand |
+| **shared/ai-dlc-workflow.md** | 4,836 | ~1,210 | 5 — On-demand |
+| **shared/common-pitfalls.md** | 4,443 | ~1,110 | 5 — On-demand |
+| **shared/agent-rules-template.md** | 2,916 | ~730 | 6 — Init only |
+| **shared/document-analysis.md** | 2,236 | ~560 | 5 — On-demand |
+| **shared/claude-md-template.md** | 1,878 | ~470 | 6 — On-demand |
+| **humanizer/humanizer-backend.md** | 3,923 | ~980 | 6 — On-demand |
+
+### Loading Scenarios
+
+| Scenario | Tokens | % of 128K | Notes |
+|----------|-------:|----------:|-------|
+| SKILL.md only | ~10,980 | 8.6% | Minimal |
+| Core auto-load | ~25,750 | 20.1% | SKILL + bug-detection + prompt-eng + code-review |
+| **Smart load** (core + 1 framework) | **~27,750** | **21.7%** | **Recommended — 78% context free** |
+| Smart + 1 on-demand | ~30,250 | 23.6% | Typical task (fix bug, API design, etc.) |
+| Multi-framework (3 frameworks) | ~31,750 | 24.8% | Polyglot project |
+| All files | ~57,800 | 45.2% | Full audit mode |
+
+---
+
+## Smart Loading Protocol
+
+```
+PRIORITY 1: SKILL.md (~9.8k tokens)
+  → Cardinal rules, task router, auto-detect, quality gate, security protocol
+
+PRIORITY 2: {framework}/{framework}.md (~1.6-2.3k tokens)
+  → Framework-specific patterns, project structure, ORM, testing
+
+PRIORITY 3: shared/code-review.md + shared/bug-detection.md (~5.6k tokens)
+  → Senior review checklist, auto bug scanner
+
+PRIORITY 4: shared/prompt-engineering.md (~2.2k tokens)
+  → Auto-think templates, advanced patterns
+
+PRIORITY 5-6: On-demand files (~0.5-4.6k tokens each)
+  → Loaded by Task Router based on user request
+```
+
+---
+
+## On-Demand Load Triggers
+
+```
+USER REQUEST                    → FILES TO LOAD
+──────────────────────────────────────────────────────
+"Fix crash/error"               → shared/error-recovery.md
+"API design / endpoint"         → shared/api-design.md
+"Database / migration / schema" → shared/database-patterns.md
+"Auth / security / JWT"         → shared/auth-security.md
+"Microservices / service split" → shared/microservices.md
+"CI/CD / Docker / deploy"       → shared/ci-cd.md
+"Performance / cache / Redis"   → shared/performance-optimization.md
+"Logging / metrics / tracing"   → shared/observability.md
+"Write tests / testing"         → shared/testing-strategy.md
+"Setup project / architecture"  → shared/architecture-intelligence.md
+"Add package / library"         → shared/version-management.md
+"Big feature / multi-module"    → shared/ai-dlc-workflow.md
+"Read API spec / ERD / doc"     → shared/document-analysis.md
+"Weird issue / not sure why"    → shared/common-pitfalls.md
+"Code audit / review"           → shared/code-review.md + shared/common-pitfalls.md
+```
