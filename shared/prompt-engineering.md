@@ -138,39 +138,96 @@ VERDICT: [APPROVE / REQUEST CHANGES / BLOCK]
 </think>
 ```
 
-### Multi-Part / Broad Request (RULE 10)
+### Intent Analysis (every request — run FIRST)
 ```
 <think>
-REQUEST_TYPE: [fix-all | multi-task | vague-fix | scan-and-fix]
 USER_SAID: [exact user request — preserve original language]
+CONVERSATION_CONTEXT: [what were we working on before this message?]
 
-── SCOPE ANALYSIS ──
-IS_BROAD: [yes/no — does it say "all", "everywhere", "nhiều chỗ", "cho đúng"?]
-IS_MULTI_TASK: [yes/no — does it list multiple separate tasks?]
-IS_VAGUE: [yes/no — no specific file/line/module mentioned?]
-ESTIMATED_SCOPE: [1-3 files = small (just do it) | 4-10 = medium (work plan) | 10+ = large (checkpoint every module)]
+── INTENT EXTRACTION ──
+ACTION:   [create | fix | update | delete | review | check | refactor | explain]
+TARGET:   [file/module/feature — extract nouns from message]
+CRITERIA: [what "done" / "correct" looks like — infer from context]
+SCOPE:    [single file | feature module | project-wide]
 
-── DISCOVERY (mandatory if IS_BROAD or IS_VAGUE) ──
+── PATTERN DETECTION ──
+PATTERN: [A=single clear | B=vague single | C=broad sweep | D=iterative loop | E=compound | F=circular | G=past reference | H=implicit continuation | I=code paste]
+
+── IF PATTERN D (loop detection) ──
+ATTEMPT_COUNT: [how many times same area was fixed this session]
+PREVIOUS_APPROACH: [what I did last time]
+USER_FEEDBACK: [why it was rejected]
+GAP: [what I missed — be specific]
+NEW_APPROACH: [something DIFFERENT from previous]
+
+── IF PATTERN G (past reference) ──
+REFERENCED_ACTION: [what action from history is user referring to?]
+CURRENT_TARGET: [what should that action be applied to now?]
+
+── IF PATTERN H (implicit continuation) ──
+ACTIVE_WORK_PLAN: [yes/no — any remaining items?]
+NEXT_ITEM: [if yes: which item | if no: infer from last discussed area]
+
+── IF PATTERN I (code paste) ──
+CODE_LANGUAGE: [detected from paste]
+SCAN_RESULT: [Auto-Scan findings on pasted code]
+
+── IF PATTERN C/E (broad / compound) ──
 SCAN_STRATEGY: [Grep pattern | Glob path | Read specific files]
 LOCATIONS_FOUND:
-  1. [file:line] — [issue description]
-  2. [file:line] — [issue description]
-  ...
+  1. [file:line] — [issue]
+  2. [file:line] — [issue]
 TOTAL_LOCATIONS: [N]
-MODULES_AFFECTED: [list of modules/areas]
+MODULES_AFFECTED: [list]
 
 ── WORK PLAN ──
-  Item 1: [description] — [files] — [dependency: none | depends on item N]
-  Item 2: [description] — [files] — [dependency: none | depends on item N]
-  ...
+  Item 1: [description] — [files] — [dependency]
+  Item 2: [description] — [files] — [dependency]
+CHECKPOINT_AFTER: [which items]
 
-── EXECUTION ORDER ──
-  [ordered list considering dependencies]
-  CHECKPOINT_AFTER: [which items trigger a checkpoint report]
+── DECISION ──
+SCOPE_SIZE: [small (just do it) | medium (work plan) | large (checkpoints)]
+NEEDS_SCAN: [yes/no — based on pattern]
+NEEDS_LOOP_CORRECTION: [yes/no — based on attempt count]
 
-⛔ If ESTIMATED_SCOPE > small → MUST present work plan before coding
-⛔ If IS_VAGUE = yes → MUST clarify or scan before coding
-⛔ If IS_MULTI_TASK = yes → MUST split into discrete items
+⛔ If PATTERN=D and ATTEMPT_COUNT >= 3 → CHANGE strategy completely
+⛔ If PATTERN=C and SCOPE=large → MUST present work plan before coding
+⛔ NEVER ask user "what do you mean?" if you can infer from context
+</think>
+```
+
+### Spec Interpretation (informal/vague requirement)
+```
+<think>
+USER_SAID: [exact user text — preserve original language]
+
+── PARSE (extract from informal text) ──
+FEATURE: [name]
+BEHAVIORS:
+  1. [user can / system does — verb + object]
+  2. [...]
+CONDITIONS:
+  □ [if X → then Y]
+  □ [if A → then B]
+INTEGRATIONS: [email / webhook / external API / queue]
+SECURITY: [who can do this? auth required?]
+
+── INFERRED (user didn't say, but implied) ──
+EDGE_CASES:
+  □ [what if duplicate request?] → [default handling]
+  □ [what if concurrent?] → [default handling]
+  □ [what about existing data?] → [default handling]
+OUT_OF_SCOPE: [what user DIDN'T mention — flag it]
+
+── COMPLEXITY ──
+BEHAVIORS_COUNT: [N]
+CONDITIONS_COUNT: [N]
+FILES_ESTIMATE: [N]
+DECISION: [simple (just build) | medium (explain + confirm) | complex (AI-DLC)]
+
+⛔ If COMPLEXITY >= medium → MUST explain back before coding
+⛔ NEVER assume what user didn't say — list it as INFERRED
+⛔ ALWAYS separate SAID vs INFERRED in explanation
 </think>
 ```
 

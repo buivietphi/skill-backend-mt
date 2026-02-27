@@ -80,10 +80,26 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 
 | File | Bytes | Tokens (÷4) | Priority |
 |------|------:|------------:|----------|
-| **SKILL.md** | 51,877 | ~12,970 | 1 — Auto-loaded |
-| **shared/bug-detection.md** | 22,209 | ~5,550 | 3 — Auto-loaded |
-| **shared/prompt-engineering.md** | 11,718 | ~2,930 | 4 — Build tasks |
+| **SKILL.md** | 56,573 | ~14,140 | 1 — Auto-loaded |
 | **shared/code-review.md** | 26,528 | ~6,630 | 3 — Auto-loaded |
+| **shared/bug-detection.md** | 22,209 | ~5,550 | 3 — Auto-loaded |
+| **shared/architecture-intelligence.md** | 18,494 | ~4,620 | 5 — On-demand |
+| **shared/intent-analysis.md** | 17,270 | ~4,320 | 5 — On-demand (vague/compound) |
+| **shared/crud-patterns.md** | 15,445 | ~3,860 | 5 — On-demand (CRUD impl) |
+| **shared/prompt-engineering.md** | 13,689 | ~3,420 | 4 — Build tasks |
+| **shared/error-handling-impl.md** | 11,554 | ~2,890 | 5 — On-demand (error impl) |
+| **shared/api-design.md** | 11,386 | ~2,850 | 5 — On-demand |
+| **shared/error-recovery.md** | 11,096 | ~2,770 | 5 — On-demand |
+| **shared/testing-fixtures.md** | 10,888 | ~2,720 | 5 — On-demand (test impl) |
+| **shared/database-patterns.md** | 10,789 | ~2,700 | 5 — On-demand |
+| **shared/ai-dlc-workflow.md** | 9,371 | ~2,340 | 5 — On-demand |
+| **shared/pagination-patterns.md** | 8,975 | ~2,240 | 5 — On-demand (pagination) |
+| **shared/concurrency-patterns.md** | 8,802 | ~2,200 | 5 — On-demand (locking) |
+| **shared/webhook-patterns.md** | 8,496 | ~2,120 | 5 — On-demand (webhooks) |
+| **shared/logging-impl.md** | 8,320 | ~2,080 | 5 — On-demand (logging) |
+| **shared/caching-implementation.md** | 8,078 | ~2,020 | 5 — On-demand (cache) |
+| **shared/background-jobs.md** | 7,732 | ~1,930 | 5 — On-demand (jobs) |
+| **shared/file-handling.md** | 7,646 | ~1,910 | 5 — On-demand (upload) |
 | **php/laravel.md** | 9,031 | ~2,260 | 2 — If Laravel |
 | **java/spring-boot.md** | 8,977 | ~2,240 | 2 — If Spring Boot |
 | **python/fastapi.md** | 8,616 | ~2,150 | 2 — If FastAPI |
@@ -93,10 +109,6 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 | **nodejs/vuejs.md** | 7,139 | ~1,790 | 2 — If Vue.js/Nuxt |
 | **others/go-ruby-rust.md** | 7,195 | ~1,800 | 2 — If Go/Ruby/Rust |
 | **nodejs/express.md** | 6,257 | ~1,560 | 2 — If Express/Fastify |
-| **shared/architecture-intelligence.md** | 18,494 | ~4,620 | 5 — On-demand |
-| **shared/api-design.md** | 11,386 | ~2,850 | 5 — On-demand |
-| **shared/error-recovery.md** | 11,096 | ~2,770 | 5 — On-demand |
-| **shared/database-patterns.md** | 10,789 | ~2,700 | 5 — On-demand |
 | **shared/auth-security.md** | 7,469 | ~1,870 | 5 — On-demand |
 | **shared/performance-optimization.md** | 7,267 | ~1,820 | 5 — On-demand |
 | **shared/microservices.md** | 7,179 | ~1,800 | 5 — On-demand |
@@ -104,7 +116,6 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 | **shared/observability.md** | 6,100 | ~1,530 | 5 — On-demand |
 | **shared/testing-strategy.md** | 5,629 | ~1,410 | 5 — On-demand |
 | **shared/version-management.md** | 4,923 | ~1,230 | 5 — On-demand |
-| **shared/ai-dlc-workflow.md** | 9,371 | ~2,340 | 5 — On-demand |
 | **shared/common-pitfalls.md** | 4,443 | ~1,110 | 5 — On-demand |
 | **shared/agent-rules-template.md** | 2,916 | ~730 | 6 — Init only |
 | **shared/document-analysis.md** | 2,236 | ~560 | 5 — On-demand |
@@ -115,20 +126,21 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 
 | Scenario | Tokens | % of 128K | Notes |
 |----------|-------:|----------:|-------|
-| SKILL.md only | ~12,970 | 10.1% | Minimal |
-| Core auto-load | ~28,080 | 21.9% | SKILL + bug-detection + prompt-eng + code-review |
-| **Smart load** (core + 1 framework) | **~30,080** | **23.5%** | **Recommended — 76% context free** |
-| Smart + 1 on-demand | ~32,580 | 25.5% | Typical task (fix bug, API design, etc.) |
-| Multi-framework (3 frameworks) | ~34,080 | 26.6% | Polyglot project |
-| All files | ~62,500 | 48.8% | Full audit mode |
+| SKILL.md only | ~14,140 | 11.0% | Minimal |
+| Core auto-load | ~29,740 | 23.2% | SKILL + bug-detection + prompt-eng + code-review |
+| **Smart load** (core + 1 framework) | **~31,740** | **24.8%** | **Recommended — 75% context free** |
+| Smart + 1 impl pattern | ~34,740 | 27.1% | Typical task (CRUD, pagination, etc.) |
+| Smart + 2 impl patterns | ~37,740 | 29.5% | Complex task (CRUD + caching, etc.) |
+| Multi-framework (3 frameworks) | ~35,740 | 27.9% | Polyglot project |
+| All files | ~106,340 | 83.1% | Full audit mode |
 
 ---
 
 ## Smart Loading Protocol
 
 ```
-PRIORITY 1: SKILL.md (~13.0k tokens)
-  → Cardinal rules, task router, auto-detect, quality gate, security protocol
+PRIORITY 1: SKILL.md (~14.1k tokens)
+  → Cardinal rules (10), task router, auto-detect, quality gate, security protocol
 
 PRIORITY 2: {framework}/{framework}.md (~1.6-2.3k tokens)
   → Framework-specific patterns, project structure, ORM, testing
@@ -136,11 +148,16 @@ PRIORITY 2: {framework}/{framework}.md (~1.6-2.3k tokens)
 PRIORITY 3: shared/code-review.md + shared/bug-detection.md (~12.2k tokens)
   → Senior review checklist, auto bug scanner
 
-PRIORITY 4: shared/prompt-engineering.md (~2.9k tokens)
+PRIORITY 4: shared/prompt-engineering.md (~3.4k tokens)
   → Auto-think templates, advanced patterns
 
 PRIORITY 5-6: On-demand files (~0.5-4.6k tokens each)
-  → Loaded by Task Router based on user request
+  → Implementation patterns: crud-patterns, error-handling-impl, caching-implementation,
+    pagination-patterns, testing-fixtures, file-handling, background-jobs,
+    webhook-patterns, concurrency-patterns, logging-impl
+  → Architecture: architecture-intelligence, api-design, database-patterns, microservices
+  → Operations: error-recovery, auth-security, performance-optimization, ci-cd, observability
+  → Other: intent-analysis, ai-dlc-workflow, testing-strategy, version-management, common-pitfalls
 ```
 
 ---
@@ -150,6 +167,19 @@ PRIORITY 5-6: On-demand files (~0.5-4.6k tokens each)
 ```
 USER REQUEST                    → FILES TO LOAD
 ──────────────────────────────────────────────────────
+"Vague/informal request"        → shared/intent-analysis.md
+"sửa cho đúng / fix properly"  → shared/intent-analysis.md
+"Compound / multi-task request" → shared/intent-analysis.md
+"Create CRUD / service"         → shared/crud-patterns.md
+"Error handling / exceptions"   → shared/error-handling-impl.md
+"Cache / Redis implementation"  → shared/caching-implementation.md
+"Pagination / filtering / sort" → shared/pagination-patterns.md
+"Test setup / factories / mock" → shared/testing-fixtures.md
+"File upload / S3 / storage"    → shared/file-handling.md
+"Background job / queue / CRON" → shared/background-jobs.md
+"Webhook / receive / send"      → shared/webhook-patterns.md
+"Race condition / locking"      → shared/concurrency-patterns.md
+"Logging / correlation ID"      → shared/logging-impl.md
 "Fix crash/error"               → shared/error-recovery.md
 "API design / endpoint"         → shared/api-design.md
 "Database / migration / schema" → shared/database-patterns.md

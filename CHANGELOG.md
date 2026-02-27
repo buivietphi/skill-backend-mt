@@ -7,6 +7,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.1.1] — 2026-02-28
+
+### Added — Intent Analysis & Request Understanding
+- **shared/intent-analysis.md** (~4,320 tokens) — Intent Analysis Engine (9 patterns A-I), Spec Interpretation Protocol, Loop Detection & Self-Correction, Scope Inference Protocol, Multi-Task Splitting Protocol
+- **Intent Analysis + Spec Interpretation think templates** (shared/prompt-engineering.md)
+
+### Added — Implementation Patterns (10 new files, ~25,980 tokens)
+- **shared/crud-patterns.md** (~3,860 tokens) — CRUD service generation with edge case checklists, state machine, multi-step orchestration + rollback
+- **shared/error-handling-impl.md** (~2,890 tokens) — Custom exception hierarchy, global handler (NestJS + FastAPI), error propagation, timeout + retry
+- **shared/caching-implementation.md** (~2,020 tokens) — Cache-aside, write-through, multi-level cache, stampede prevention
+- **shared/pagination-patterns.md** (~2,240 tokens) — Offset + cursor pagination, filter whitelist, sort security
+- **shared/testing-fixtures.md** (~2,720 tokens) — Factory pattern, test DB setup, mocking, integration tests
+- **shared/file-handling.md** (~1,910 tokens) — Upload, S3/presigned URL, image processing, cleanup CRON
+- **shared/background-jobs.md** (~1,930 tokens) — BullMQ/Celery handlers, retries, DLQ, scheduled tasks
+- **shared/webhook-patterns.md** (~2,120 tokens) — HMAC signature verification, dedup, idempotent handlers, delivery
+- **shared/concurrency-patterns.md** (~2,200 tokens) — Optimistic/pessimistic locking, distributed lock, idempotency keys
+- **shared/logging-impl.md** (~2,080 tokens) — Structured logging (Pino/structlog), correlation IDs, PII redaction
+
+### Changed
+- SKILL.md: 51,877 → 56,573 bytes (~14,140 tokens) — split Intent Analysis into on-demand file + added 10 implementation pattern entries to Task Router
+- shared/ folder: 18 → 28 files
+- Smart load budget: ~30,080 → ~31,740 tokens (24.8% of 128K)
+- Full load: ~62,500 → ~106,340 tokens (83.1% of 128K)
+- Coverage: 65% → ~90% senior backend coverage — added "HOW to implement" alongside "what NOT to do"
+
+---
+
 ## [1.1.0] — 2026-02-28
 
 ### Added

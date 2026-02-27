@@ -48,7 +48,7 @@ npx @buivietphi/skill-backend-mt --init all        # All agents
       │   └── laravel.md
       ├── others/
       │   └── go-ruby-rust.md
-      └── shared/               ← On-demand (18 files)
+      └── shared/               ← On-demand (28 files)
 ```
 
 ---
@@ -100,6 +100,18 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 - Multi-level caching (Redis, in-memory, CDN)
 - Connection pooling, query optimization
 
+### Implementation Patterns (NEW in v1.3.0)
+- CRUD service generation (validate → authorize → execute → side effects → return DTO)
+- Error handling implementation (custom exceptions, global handler, retry + timeout)
+- Caching implementation (cache-aside, write-through, invalidation, stampede prevention)
+- Pagination & filtering (offset-based, cursor-based, sort security, filter whitelist)
+- Testing fixtures (factories, builders, mocks, integration test setup)
+- File upload & storage (S3, presigned URL, validation, image processing, cleanup)
+- Background jobs (BullMQ, Celery, retries, dead letter queue, CRON)
+- Webhook patterns (signature verification, deduplication, idempotent handlers)
+- Concurrency patterns (optimistic/pessimistic locking, distributed lock, idempotency keys)
+- Structured logging (Pino/structlog, correlation IDs, PII redaction)
+
 ### Testing & CI/CD
 - Testing pyramid (70% unit / 20% integration / 10% E2E)
 - Per-framework testing (Jest, pytest, JUnit, PHPUnit)
@@ -122,6 +134,8 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 - AI-DLC Workflow (4 Hats for complex features)
 - Multi-Part Execution Protocol (discover all locations → work plan → checkpoint)
 - Discovery-Execute Workflow (for "fix all X" / broad requests)
+- Intent Analysis Engine (AI self-parses vague/circular input without asking user)
+- Loop Detection & Self-Correction (detect repeated failures → change strategy automatically)
 
 ### Intelligent Prompt Engineering
 - Auto-think templates (Fix/Debug, Build/Create, Review, Refactor, Multi-Part)
@@ -135,26 +149,38 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 
 | Scenario | Tokens | % of 128K |
 |----------|-------:|----------:|
-| SKILL.md only | ~12,970 | 10.1% |
-| Core auto-load | ~28,080 | 21.9% |
-| **Smart load** (core + 1 framework) | **~30,080** | **23.5%** |
-| Multi-framework (3 frameworks) | ~34,080 | 26.6% |
-| Full load (all files) | ~62,500 | 48.8% |
+| SKILL.md only | ~14,140 | 11.0% |
+| Core auto-load | ~29,740 | 23.2% |
+| **Smart load** (core + 1 framework) | **~31,740** | **24.8%** |
+| Multi-framework (3 frameworks) | ~35,740 | 27.9% |
+| Full load (all files) | ~106,340 | 83.1% |
 
-**Smart loading uses only 23.5% of context** — 76% free for actual code work.
+**Smart loading uses only 24.8% of context** — 75% free for actual code work.
 
 ### Per-File Breakdown (bytes ÷ 4)
 
 | File | Bytes | Tokens |
 |------|------:|-------:|
-| SKILL.md | 51,877 | ~12,970 |
+| SKILL.md | 56,573 | ~14,140 |
 | shared/code-review.md | 26,528 | ~6,630 |
 | shared/bug-detection.md | 22,209 | ~5,550 |
 | shared/architecture-intelligence.md | 18,494 | ~4,620 |
+| shared/intent-analysis.md | 17,270 | ~4,320 |
+| shared/crud-patterns.md | 15,445 | ~3,860 |
+| shared/prompt-engineering.md | 13,689 | ~3,420 |
+| shared/error-handling-impl.md | 11,554 | ~2,890 |
 | shared/api-design.md | 11,386 | ~2,850 |
 | shared/error-recovery.md | 11,096 | ~2,770 |
+| shared/testing-fixtures.md | 10,888 | ~2,720 |
 | shared/database-patterns.md | 10,789 | ~2,700 |
-| shared/prompt-engineering.md | 11,718 | ~2,930 |
+| shared/ai-dlc-workflow.md | 9,371 | ~2,340 |
+| shared/pagination-patterns.md | 8,975 | ~2,240 |
+| shared/concurrency-patterns.md | 8,802 | ~2,200 |
+| shared/webhook-patterns.md | 8,496 | ~2,120 |
+| shared/logging-impl.md | 8,320 | ~2,080 |
+| shared/caching-implementation.md | 8,078 | ~2,020 |
+| shared/background-jobs.md | 7,732 | ~1,930 |
+| shared/file-handling.md | 7,646 | ~1,910 |
 | php/laravel.md | 9,031 | ~2,260 |
 | java/spring-boot.md | 8,977 | ~2,240 |
 | python/fastapi.md | 8,616 | ~2,150 |
@@ -171,7 +197,6 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 | shared/observability.md | 6,100 | ~1,530 |
 | shared/testing-strategy.md | 5,629 | ~1,410 |
 | shared/version-management.md | 4,923 | ~1,230 |
-| shared/ai-dlc-workflow.md | 9,371 | ~2,340 |
 | shared/common-pitfalls.md | 4,443 | ~1,110 |
 | humanizer/humanizer-backend.md | 3,923 | ~980 |
 | shared/agent-rules-template.md | 2,916 | ~730 |

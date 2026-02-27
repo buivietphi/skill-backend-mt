@@ -94,6 +94,11 @@ USER REQUEST                    → ACTION (Read tool required)
 "Create/add X endpoint/route"   → Feature Scaffold Protocol below — MINIMAL
                                   controller + service ONLY (no repository layer)
 
+[informal/vague spec description] → Read: shared/intent-analysis.md → Spec Interpretation Protocol
+"tôi muốn cái X nó làm Y..."     Parse informal text → structure → explain back → confirm
+"add a thing that does Z, oh and  BEFORE coding: present structured spec to user
+ also W, make sure it's secure"   ⛔ NEVER code complex features from vague spec without interpreting first
+
 "Add X to existing Y"           → MODIFY existing files, don't create new structure
 
 "Setup project / architecture"  → Read: shared/architecture-intelligence.md
@@ -207,7 +212,7 @@ USER REQUEST                    → ACTION (Read tool required)
 "sửa A rồi sửa B rồi check C"     Split into numbered work items → execute sequentially
                                     → checkpoint after each → report completion
 
-"Make X work correctly"             → If vague: Scope Clarification Protocol below
+"Make X work correctly"             → Read: shared/intent-analysis.md → Scope Inference Protocol
 "sửa cho đúng" / "fix it properly"  WHAT is wrong? → scan target → discover ALL issues
                                     → present findings → fix with user approval
 
@@ -218,6 +223,48 @@ USER REQUEST                    → ACTION (Read tool required)
 "API caching / CDN / ETags"     → Read: shared/api-design.md → HTTP Caching section
                                   Read: shared/performance-optimization.md → Caching Strategy
                                   then: set Cache-Control + ETag + CDN strategy per endpoint
+
+── IMPLEMENTATION PATTERNS ─────────────────────────────────────────
+
+"Create CRUD / service"         → Read: shared/crud-patterns.md
+                                  VALIDATE → AUTHORIZE → EXECUTE → SIDE EFFECTS → RETURN DTO
+                                  State machine for status transitions, multi-step orchestration
+
+"Error handling / exceptions"   → Read: shared/error-handling-impl.md
+                                  Custom exception hierarchy, global handler, error propagation
+                                  Timeout + retry pattern for external API calls
+
+"Cache / Redis implementation"  → Read: shared/caching-implementation.md
+                                  Cache-aside, write-through, invalidation, stampede prevention
+                                  Multi-level cache (L1 in-memory + L2 Redis + L3 DB)
+
+"Pagination / filtering / sort" → Read: shared/pagination-patterns.md
+                                  Offset-based (admin) vs cursor-based (mobile/API)
+                                  Filter whitelist, sort security, tiebreaker pattern
+
+"Test setup / factories / mock" → Read: shared/testing-fixtures.md
+                                  Factory pattern, test DB setup, mocking external services
+                                  Integration test with real DB, test anti-patterns
+
+"File upload / S3 / storage"    → Read: shared/file-handling.md
+                                  Server-side upload, presigned URL, image processing
+                                  Validation (MIME + extension + magic bytes), cleanup CRON
+
+"Background job / queue / CRON" → Read: shared/background-jobs.md
+                                  Job handler structure, retry strategy, dead letter queue
+                                  BullMQ (Node.js), Celery (Python), scheduled tasks
+
+"Webhook / receive / send"      → Read: shared/webhook-patterns.md
+                                  Signature verification (HMAC), deduplication, idempotent handlers
+                                  Webhook delivery with retry + auto-disable on failure
+
+"Race condition / locking"      → Read: shared/concurrency-patterns.md
+"Idempotency / concurrency"       Optimistic/pessimistic locking, distributed lock (Redis)
+                                  Idempotency keys, atomic SQL, race condition prevention
+
+"Logging / correlation ID"      → Read: shared/logging-impl.md
+                                  Structured logging (Pino/structlog), correlation ID middleware
+                                  Log levels guide, request/response logging, PII redaction
 ```
 
 **⛔ NEVER start coding without identifying the task type first.**
@@ -406,67 +453,38 @@ COMPLETION REPORT:
 ✅ ALWAYS compare original work plan count vs actual changes made
 ```
 
-### Scope Clarification Protocol
+### Intent Analysis & Request Understanding (on-demand)
+
+> **Full protocols in:** `shared/intent-analysis.md` (~3,650 tokens)
+> **Load when:** vague/informal/compound/circular input, spec interpretation, loop detection
+> **Contains:** Intent Analysis Engine (9 patterns A-I), Spec Interpretation Protocol, Loop Detection & Self-Correction, Scope Inference Protocol, Multi-Task Splitting Protocol
 
 ```
-WHEN request is too vague to build a work plan:
+QUICK REFERENCE (always available — full details in shared/intent-analysis.md):
 
-  User: "sửa cho đúng" / "fix it" / "make it work correctly"
+  REQUEST PATTERNS:
+    A: Single clear task    → Just do it
+    B: Vague single target  → Read → Auto-Scan → fix all → report
+    C: Broad sweep          → Discovery Protocol → work plan → checkpoints
+    D: Iterative refinement → Don't repeat same approach → change strategy
+    E: Compound request     → Split into discrete tasks → execute sequentially
+    F: Circular/contradictory → Follow LATEST instruction
+    G: Reference to past    → Search conversation history → replicate
+    H: Implicit continuation → Check work plan → next item
+    I: Code paste           → Auto-Scan → report findings → suggest fixes
 
-  STEP 1: ASK what "correct" means
-    "What specific behavior is wrong? I need to understand:
-     1. What is it doing NOW? (current behavior)
-     2. What SHOULD it do? (expected behavior)
-     3. Which area/page/endpoint is affected?"
+  SCOPE INFERENCE (don't ask, figure it out):
+    1 file/function mentioned → that file only
+    Feature name mentioned   → all files in that module
+    "everywhere"             → project-wide Discovery Protocol
+    Screenshot provided      → the component/page shown
+    Error log provided       → files in stack trace
+    Truly uninferable        → narrowest scope → fix what you can → let user expand
 
-  STEP 2: If user describes symptoms (not locations)
-    → Scan the described area
-    → List ALL issues found
-    → Ask user to confirm which are the ones to fix
-
-  STEP 3: If user gives location but not specifics
-    "I'll scan [location] and report what I find."
-    → Run Health Check Protocol (bug-detection.md)
-    → Present findings → ask which to fix
-
-  ⛔ NEVER guess what "fix it" means — ALWAYS clarify or scan first
-  ⛔ NEVER fix 1 thing and assume that was the user's intent
-```
-
-### Multi-Task Splitting Protocol
-
-```
-WHEN user gives multiple tasks in one message:
-
-  User: "fix the login bug, then update the UI, then add validation"
-
-  STEP 1: SPLIT into discrete tasks
-    Task 1: Fix login bug
-    Task 2: Update UI
-    Task 3: Add validation
-
-  STEP 2: ORDER by dependency
-    → Does Task 2 depend on Task 1? If yes → sequential
-    → Independent tasks → can reorder by priority
-
-  STEP 3: EXECUTE one at a time
-    → Start Task 1
-    → Quality Gate Task 1
-    → CHECKPOINT: "Task 1 done. Starting Task 2."
-    → Start Task 2
-    → Quality Gate Task 2
-    → CHECKPOINT: "Task 2 done. Starting Task 3."
-    → ...
-
-  STEP 4: FINAL REPORT
-    "All tasks complete:
-     ✅ Task 1: [summary]
-     ✅ Task 2: [summary]
-     ✅ Task 3: [summary]"
-
-  ⛔ NEVER do all tasks silently and only report at the end
-  ⛔ NEVER skip a task because you forgot — use the task list
-  ⛔ NEVER combine tasks that should be separate changes
+  SPEC INTERPRETATION (for informal/vague feature descriptions):
+    PARSE → STRUCTURE → EXPLAIN BACK → DECIDE (simple/medium/complex)
+    ⛔ NEVER code complex spec without explaining back first
+    ✅ ALWAYS separate what user SAID vs what you INFERRED
 ```
 
 ---
@@ -853,6 +871,16 @@ RE-READ your generated code and check:
   □ Does any migration contain DROP/TRUNCATE? (RULE 9 — confirm first)
   □ Is this feature > 3 files? Written spec presented first? (RULE 8)
 
+INTENT ALIGNMENT CHECK (did I actually do what user asked?):
+  □ Re-read user's ORIGINAL request — does my code address it?
+  □ Did user ask for X but I did Y instead? (scope drift)
+  □ Is this the same area I already fixed earlier in this session?
+    → If YES: am I repeating the same approach? → CHANGE strategy
+  □ If user said "still wrong" / "chưa đúng" about my last fix:
+    → What SPECIFICALLY was wrong? Don't guess — diff before vs after
+    → Am I fixing the SAME thing again or something different?
+  □ Did I address ALL parts of the request or just the first part I noticed?
+
 LIBRARY/API VERIFICATION (for every new function call you wrote):
   □ Did I use a library function? → Is it in package.json/requirements.txt?
   □ Does the function actually exist in the INSTALLED version?
@@ -921,8 +949,8 @@ PRE-DEPLOY:
 **Load ONLY what's needed. Save context for actual work.**
 
 ```
-PRIORITY 1 (auto-loaded): SKILL.md (~11.0k tokens)
-  → Cardinal rules (9), task router, auto-detect, quality gate, hard bans
+PRIORITY 1 (auto-loaded): SKILL.md (~13.2k tokens)
+  → Cardinal rules (10), task router, auto-detect, quality gate, hard bans
 
 PRIORITY 2 (load ONE based on detected framework):
   → nodejs/nestjs.md     (~2.0k tokens) — if NestJS detected
@@ -940,9 +968,20 @@ PRIORITY 3 (auto-loaded for all tasks):
   → shared/bug-detection.md (~5.6k tokens)
 
 PRIORITY 4 (auto-loaded for build tasks):
-  → shared/prompt-engineering.md (~2.6k tokens)
+  → shared/prompt-engineering.md (~3.4k tokens)
 
 PRIORITY 5-6 (on-demand, loaded by Task Router):
+  → shared/intent-analysis.md           (~4.3k tokens) — vague/informal/compound requests
+  → shared/crud-patterns.md             (~3.8k tokens) — CRUD service implementation
+  → shared/error-handling-impl.md       (~2.9k tokens) — custom exceptions, global handler
+  → shared/caching-implementation.md    (~2.4k tokens) — cache-aside, invalidation, Redis
+  → shared/pagination-patterns.md       (~2.3k tokens) — offset/cursor, filtering, sorting
+  → shared/testing-fixtures.md          (~2.3k tokens) — factories, mocks, integration tests
+  → shared/file-handling.md             (~2.0k tokens) — upload, S3, presigned URL, cleanup
+  → shared/concurrency-patterns.md      (~2.0k tokens) — locking, idempotency, race conditions
+  → shared/background-jobs.md           (~1.9k tokens) — job handlers, retries, DLQ, CRON
+  → shared/webhook-patterns.md          (~1.9k tokens) — signature verify, dedup, delivery
+  → shared/logging-impl.md             (~1.6k tokens) — structured logging, correlation IDs
   → shared/architecture-intelligence.md (~4.6k tokens)
   → shared/api-design.md              (~2.9k tokens)
   → shared/error-recovery.md          (~2.8k tokens)
