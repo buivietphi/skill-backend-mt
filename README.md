@@ -237,4 +237,4 @@ Reads YOUR project first, clones existing patterns. Best for existing codebases.
 
 ## License
 
-MIT
+MIT — by [buivietphi](https://github.com/buivietphi)
