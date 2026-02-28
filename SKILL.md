@@ -1,7 +1,7 @@
 ---
 name: skill-backend-mt
 description: "Master Senior Backend Engineer. Patterns from 30+ production repos (200k+ GitHub stars: NestJS, Next.js, Fastify, Django, FastAPI, Spring Boot, Laravel, Express, Prisma, TypeORM). Use when: building backend features, fixing backend bugs, reviewing backend code, backend architecture, API design, database patterns, NestJS, Next.js, Express, Vue.js, Django, FastAPI, Spring Boot, Laravel, Go, Ruby, Rust, microservices, security audit, code review, deployment. Two modes: (1) default = pre-built production patterns, (2) 'project' = reads current project and adapts."
-version: "1.0.0"
+version: "1.1.0"
 author: buivietphi
 priority: high
 user-invocable: true

@@ -136,6 +136,113 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 
 ---
 
+## Antigravity Configuration
+
+```yaml
+skill:
+  name: skill-backend-mt
+  version: "1.1.0"
+  author: buivietphi
+  category: engineering
+  tags:
+    - backend
+    - nestjs
+    - nextjs
+    - express
+    - django
+    - fastapi
+    - spring-boot
+    - laravel
+    - clean-architecture
+    - code-review
+    - senior
+
+  modes:
+    default:
+      description: "Use pre-built production patterns from 30+ backend repos"
+      loads:
+        # Core — always
+        - SKILL.md
+        - "{detected-framework}/{framework}.md"
+        - shared/code-review.md
+        - shared/bug-detection.md
+        - shared/prompt-engineering.md
+        # On-demand — add based on task
+        # - shared/crud-patterns.md
+        # - shared/error-handling-impl.md
+        # - shared/caching-implementation.md
+        # - shared/pagination-patterns.md
+        # - shared/testing-fixtures.md
+        # - shared/file-handling.md
+        # - shared/background-jobs.md
+        # - shared/webhook-patterns.md
+        # - shared/concurrency-patterns.md
+        # - shared/logging-impl.md
+
+    project:
+      description: "Read current project, adapt to its framework and conventions"
+      argument: "project"
+      loads:
+        - SKILL.md (Section: Project Adaptation)
+        - "{detected-framework}/{framework}.md"
+        - shared/code-review.md
+        - shared/bug-detection.md
+        - shared/prompt-engineering.md
+
+  framework_detection:
+    nestjs:
+      detect: "nest-cli.json exists OR package.json contains '@nestjs/core'"
+      load: "nodejs/nestjs.md"
+    nextjs:
+      detect: "next.config.js/ts exists OR package.json contains 'next'"
+      load: "nodejs/nextjs.md"
+    express:
+      detect: "package.json contains 'express' or 'fastify' (without NestJS)"
+      load: "nodejs/express.md"
+    vuejs:
+      detect: "package.json contains 'vue' or 'nuxt'"
+      load: "nodejs/vuejs.md"
+    django:
+      detect: "manage.py exists OR requirements.txt contains 'django'"
+      load: "python/django.md"
+    fastapi:
+      detect: "requirements.txt contains 'fastapi' OR pyproject.toml contains 'fastapi'"
+      load: "python/fastapi.md"
+    spring-boot:
+      detect: "pom.xml or build.gradle contains 'spring-boot'"
+      load: "java/spring-boot.md"
+    laravel:
+      detect: "artisan exists OR composer.json contains 'laravel'"
+      load: "php/laravel.md"
+    go:
+      detect: "go.mod exists"
+      load: "others/go-ruby-rust.md"
+    ruby:
+      detect: "Gemfile exists AND config/routes.rb exists"
+      load: "others/go-ruby-rust.md"
+    rust:
+      detect: "Cargo.toml exists"
+      load: "others/go-ruby-rust.md"
+
+  language_detection:
+    typescript: ".ts files in src/"
+    javascript: ".js files in src/"
+    python: ".py files"
+    java: ".java files in src/"
+    php: ".php files in app/"
+    go: ".go files"
+    ruby: ".rb files in app/"
+    rust: ".rs files in src/"
+
+  context_budget:
+    max_tokens: 118265
+    smart_load_tokens: 31740
+    fits_128k: "smart load only"
+    fits_200k: "full load (53%)"
+```
+
+---
+
 ## Smart Loading Protocol
 
 ```
@@ -195,4 +302,24 @@ USER REQUEST                    → FILES TO LOAD
 "Read API spec / ERD / doc"     → shared/document-analysis.md
 "Weird issue / not sure why"    → shared/common-pitfalls.md
 "Code audit / review"           → shared/code-review.md + shared/common-pitfalls.md
+```
+
+---
+
+## Metadata
+
+```json
+{
+  "id": "skill-backend-mt",
+  "name": "skill-backend-mt",
+  "version": "1.1.0",
+  "author": "buivietphi",
+  "category": "engineering",
+  "description": "Master Senior Backend Engineer. Patterns from 30+ production repos (200k+ GitHub stars: NestJS, Next.js, Fastify, Django, FastAPI, Spring Boot, Laravel, Express, Prisma, TypeORM). Cardinal rules, self-critique loops, leverage pyramid, verification-first, decision matrix, codebase scan strategy, grounded code review (anti-false-positive), intent analysis, spec interpretation, implementation patterns. NestJS, Next.js, Express, Vue.js, Django, FastAPI, Spring Boot, Laravel, Go, Ruby, Rust.",
+  "risk": "low",
+  "source": "buivietphi (MIT)",
+  "frameworks": ["nestjs", "nextjs", "express", "vuejs", "django", "fastapi", "spring-boot", "laravel", "go", "ruby", "rust"],
+  "languages": ["typescript", "javascript", "python", "java", "php", "go", "ruby", "rust"],
+  "agents": ["claude-code", "cline", "roo-code", "cursor", "windsurf", "copilot", "codex", "gemini", "kimi", "kilo-code", "kiro", "antigravity"]
+}
 ```
