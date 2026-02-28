@@ -242,6 +242,251 @@ message GetUserResponse {
 
 ---
 
+## Server-Sent Events (SSE)
+
+### When to Use SSE
+```
+✅ AI streaming responses (token-by-token output like ChatGPT/Claude)
+✅ Live notifications (one-way server → client)
+✅ Real-time dashboards (metrics, logs, feeds)
+✅ Progress updates (file processing, long-running jobs)
+
+⛔ Bi-directional communication → use WebSocket
+⛔ Binary data streaming → use WebSocket or gRPC streaming
+⛔ Client needs to send frequent messages → use WebSocket
+```
+
+### SSE Implementation
+
+**NestJS:**
+```typescript
+@Controller('api/v1/stream')
+export class StreamController {
+  @Sse('events')
+  events(): Observable<MessageEvent> {
+    return interval(1000).pipe(
+      map((num) => ({
+        data: JSON.stringify({ count: num, timestamp: new Date().toISOString() }),
+      })),
+    );
+  }
+
+  // AI streaming response pattern
+  @Post('chat')
+  @Header('Content-Type', 'text/event-stream')
+  @Header('Cache-Control', 'no-cache')
+  @Header('Connection', 'keep-alive')
+  async streamChat(@Body() dto: ChatDto, @Res() res: Response) {
+    res.setHeader('Content-Type', 'text/event-stream');
+
+    for await (const chunk of this.aiService.streamResponse(dto.prompt)) {
+      res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    res.end();
+  }
+}
+```
+
+**FastAPI:**
+```python
+from sse_starlette.sse import EventSourceResponse
+
+@router.get("/stream/events")
+async def stream_events():
+    async def event_generator():
+        while True:
+            yield {"data": json.dumps({"timestamp": datetime.utcnow().isoformat()})}
+            await asyncio.sleep(1)
+    return EventSourceResponse(event_generator())
+
+# AI streaming response
+@router.post("/stream/chat")
+async def stream_chat(dto: ChatRequest):
+    async def generate():
+        async for chunk in ai_service.stream_response(dto.prompt):
+            yield {"data": json.dumps({"content": chunk})}
+        yield {"data": json.dumps({"done": True})}
+    return EventSourceResponse(generate())
+```
+
+**Express:**
+```typescript
+app.get('/api/v1/stream/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const interval = setInterval(() => {
+    res.write(`data: ${JSON.stringify({ timestamp: new Date() })}\n\n`);
+  }, 1000);
+
+  req.on('close', () => clearInterval(interval));
+});
+```
+
+### SSE Client Pattern
+```javascript
+const evtSource = new EventSource('/api/v1/stream/events');
+
+evtSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.done) { evtSource.close(); return; }
+  appendToUI(data.content);
+};
+
+evtSource.onerror = () => {
+  evtSource.close();
+  // Reconnect with exponential backoff
+};
+```
+
+### SSE vs WebSocket vs Polling
+```
+FEATURE              SSE             WebSocket        Polling
+──────────────────────────────────────────────────────────────
+Direction            Server→Client   Bidirectional    Client→Server
+Protocol             HTTP            WS               HTTP
+Auto-reconnect       Built-in        Manual           Manual
+Binary data          No              Yes              Yes
+HTTP/2 multiplexing  Yes             No               Yes
+Browser support      All modern      All modern       All
+Proxy-friendly       Yes             Tricky           Yes
+Best for             Notifications   Chat, gaming     Simple updates
+                     AI streaming    Collaboration    Low-frequency
+```
+
+---
+
+## GraphQL Subscriptions (Real-Time)
+
+### Setup
+```typescript
+// NestJS + graphql-subscriptions
+type Subscription {
+  orderUpdated(userId: ID!): Order!
+  notificationReceived(userId: ID!): Notification!
+}
+
+@Resolver()
+export class OrderSubscriptionResolver {
+  constructor(private readonly pubSub: PubSubService) {}
+
+  @Subscription(() => Order, {
+    filter: (payload, variables) => 
+      payload.orderUpdated.userId === variables.userId,
+  })
+  orderUpdated(@Args('userId') userId: string) {
+    return this.pubSub.asyncIterator('ORDER_UPDATED');
+  }
+}
+
+// Publishing events (in service)
+async updateOrderStatus(orderId: string, status: string) {
+  const order = await this.orderRepo.update(orderId, { status });
+  await this.pubSub.publish('ORDER_UPDATED', { orderUpdated: order });
+  return order;
+}
+```
+
+### PubSub Backend
+```
+Development:  In-memory PubSub (default)
+Production:   Redis PubSub (graphql-redis-subscriptions)
+              Kafka (for high-throughput)
+
+RULE: In-memory PubSub does NOT work with multiple server instances.
+      Use Redis PubSub for any multi-instance deployment.
+```
+
+### Security
+```
+□ Authenticate WebSocket connection on connect
+□ Authorize subscription per user (filter by userId/role)
+□ Rate limit subscriptions per client
+□ Set connection timeout (disconnect idle clients)
+□ Validate subscription arguments
+```
+
+---
+
+## API Versioning Implementation
+
+### Strategy: URL-Based with Versioned DTOs
+```typescript
+// DTOs per version
+// dto/v1/user-response.dto.ts
+export class UserResponseV1 {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: Date;
+}
+
+// dto/v2/user-response.dto.ts
+export class UserResponseV2 {
+  id: string;
+  email: string;
+  firstName: string;   // ← changed from 'name'
+  lastName: string;    // ← new field
+  avatarUrl: string;   // ← new field
+  createdAt: Date;
+}
+```
+
+### Controller Versioning
+```typescript
+// v1 controller — maintain for backward compatibility
+@Controller('api/v1/users')
+export class UsersControllerV1 {
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<UserResponseV1> {
+    const user = await this.usersService.findOne(id);
+    return this.mapToV1(user); // name: user.firstName + ' ' + user.lastName
+  }
+}
+
+// v2 controller — current version
+@Controller('api/v2/users')
+export class UsersControllerV2 {
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<UserResponseV2> {
+    return this.usersService.findOne(id); // direct mapping
+  }
+}
+```
+
+### Sunset Headers (Deprecation)
+```typescript
+// middleware/api-version.middleware.ts
+export class ApiVersionMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    if (req.path.startsWith('/api/v1')) {
+      res.setHeader('Deprecation', 'true');
+      res.setHeader('Sunset', 'Sat, 01 Jun 2025 00:00:00 GMT');
+      res.setHeader('Link', '</api/v2>; rel="successor-version"');
+    }
+    next();
+  }
+}
+```
+
+### Migration Strategy
+```
+PHASE 1: Release v2 alongside v1 (both active)
+PHASE 2: Add Sunset header to v1 responses
+PHASE 3: Log v1 usage → notify active consumers
+PHASE 4: After sunset date → return 410 Gone for v1
+PHASE 5: Remove v1 code
+
+RULE: NEVER remove a version without at least 3 months notice.
+RULE: NEVER change v1 behavior after v2 is released.
+RULE: Monitor v1 traffic — don't sunset if still heavily used.
+```
+
+---
+
 ## HTTP Caching (API-Level)
 
 **Cache at the HTTP layer BEFORE hitting application code.**
@@ -387,4 +632,6 @@ CREATE TABLE translations (
 □ Cache-Control headers on GET endpoints
 □ ETag support for bandwidth-sensitive endpoints
 □ Accept-Language handling (if multi-language required)
+□ SSE endpoints for real-time streaming (if applicable)
+□ API version sunset plan documented
 ```

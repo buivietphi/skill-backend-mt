@@ -160,13 +160,117 @@ Benefits:
 
 ## Load Testing
 
+### Tool Selection
 ```
-TOOLS:
-  k6         → JavaScript-based, easy to script
-  Artillery  → YAML config, good for CI
-  JMeter     → GUI, enterprise features
-  Locust     → Python-based, distributed
+TOOL         LANGUAGE      BEST FOR
+──────────────────────────────────────────────────
+k6           JavaScript    Developer-friendly, CI-native, modern
+Artillery    YAML          Quick setup, good for CI
+Locust       Python        Custom scenarios, distributed
+JMeter       GUI/XML       Enterprise, legacy systems
 
+RECOMMENDATION: k6 for most teams (open-source, CI-friendly, modern API).
+```
+
+### k6 Load Test Script
+```javascript
+// tests/load/api-load-test.js
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+import { Rate, Trend } from 'k6/metrics';
+
+const errorRate = new Rate('errors');
+const responseTime = new Trend('response_time');
+
+// Test stages: ramp up → sustain → ramp down
+export const options = {
+  stages: [
+    { duration: '1m', target: 50 },    // ramp to 50 users
+    { duration: '3m', target: 50 },    // sustain 50 users
+    { duration: '1m', target: 100 },   // ramp to 100 users
+    { duration: '3m', target: 100 },   // sustain 100 users
+    { duration: '1m', target: 0 },     // ramp down
+  ],
+  thresholds: {
+    http_req_duration: ['p(95)<200', 'p(99)<500'],  // p95 < 200ms
+    errors: ['rate<0.01'],                           // error rate < 1%
+    http_req_failed: ['rate<0.01'],
+  },
+};
+
+const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000';
+const TOKEN = __ENV.AUTH_TOKEN || '';
+
+export default function () {
+  const headers = { Authorization: `Bearer ${TOKEN}`, 'Content-Type': 'application/json' };
+
+  // GET list endpoint
+  const listRes = http.get(`${BASE_URL}/api/v1/users?page=1&limit=20`, { headers });
+  check(listRes, { 'list status 200': (r) => r.status === 200 });
+  errorRate.add(listRes.status !== 200);
+  responseTime.add(listRes.timings.duration);
+
+  // GET single resource
+  const getRes = http.get(`${BASE_URL}/api/v1/users/1`, { headers });
+  check(getRes, { 'get status 200': (r) => r.status === 200 });
+
+  // POST create (use unique data per iteration)
+  const payload = JSON.stringify({
+    email: `loadtest-${__VU}-${__ITER}@test.com`,
+    name: 'Load Test User',
+    password: 'TestPass123!',
+  });
+  const createRes = http.post(`${BASE_URL}/api/v1/users`, payload, { headers });
+  check(createRes, { 'create status 201': (r) => r.status === 201 });
+
+  sleep(1); // think time between requests
+}
+```
+
+### Locust Script (Python)
+```python
+# tests/load/locustfile.py
+from locust import HttpUser, task, between
+
+class APIUser(HttpUser):
+    wait_time = between(1, 3)
+    
+    def on_start(self):
+        self.headers = {"Authorization": "Bearer test-token"}
+    
+    @task(3)  # 3x more likely than other tasks
+    def list_users(self):
+        self.client.get("/api/v1/users", headers=self.headers)
+    
+    @task(2)
+    def get_user(self):
+        self.client.get("/api/v1/users/1", headers=self.headers)
+    
+    @task(1)
+    def create_user(self):
+        self.client.post("/api/v1/users", json={
+            "email": f"load-{self.environment.runner.user_count}@test.com",
+            "name": "Load Test", "password": "Pass123!"
+        }, headers=self.headers)
+```
+
+### CI Integration (GitHub Actions)
+```yaml
+  load-test:
+    runs-on: ubuntu-latest
+    needs: [test]  # run after unit/integration tests pass
+    steps:
+      - uses: actions/checkout@v4
+      - uses: grafana/k6-action@v0.3.1
+        with:
+          filename: tests/load/api-load-test.js
+        env:
+          BASE_URL: http://localhost:3000
+          AUTH_TOKEN: ${{ secrets.LOAD_TEST_TOKEN }}
+```
+
+### Performance Budget
+```
 KEY METRICS:
   p50, p95, p99 response times
   Requests per second (throughput)
@@ -178,6 +282,13 @@ TARGETS (typical web API):
   p95 < 500ms for writes
   Error rate < 0.1% at expected load
   Handle 2x expected peak without degradation
+
+WHEN TO LOAD TEST:
+  ✅ Before major release (new feature launch)
+  ✅ After infrastructure change (DB migration, new server)
+  ✅ When adding new high-traffic endpoints
+  ✅ When user base grows significantly
+  ⛔ Not needed for small internal tools (<100 users)
 ```
 
 ---

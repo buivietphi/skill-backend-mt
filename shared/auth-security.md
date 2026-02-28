@@ -94,6 +94,30 @@ SESSION SECURITY:
   ✅ Set reasonable expiration (1-24 hours)
 ```
 
+### API Key Management (for Machine-to-Machine)
+
+```
+STORAGE:
+  - Hash the secret key in database (like passwords)
+  - Show the plain text secret key ONLY ONCE at creation time
+  - Store a hint (last 4 chars) to help users identify the key
+
+KEY SCOPING:
+  ✅ Attach permissions to the key (not just the user)
+  ✅ e.g., "readonly", "write-stripe", "webhook-triggers"
+
+KEY ROTATION:
+  1. Generate new key
+  2. Keep old key active
+  3. Change client to use new key
+  4. Revoke old key (after 7-30 days grace period)
+
+IMPLEMENTATION PATTERN:
+  Format: prefix_environment_randomstring_checksum
+  Example: sk_live_51Mabc..._xDf9 (Stripe pattern)
+  Why prefix? Prevents committing live keys to GitHub (easy regex scanning)
+```
+
 ---
 
 ## Authorization Patterns
@@ -248,6 +272,35 @@ DEVELOPMENT:
   Access-Control-Allow-Origin: http://localhost:3000
 
 ⛔ NEVER: Access-Control-Allow-Origin: * (with credentials)
+```
+
+---
+
+## Content Security Policy (CSP)
+
+```
+WHAT IT DOES:
+  Mitigates XSS by whitelisting trusted sources for scripts, styles, images.
+  Essential for any backend serving HTML (SSR, Django, Rails).
+
+EXAMPLE HEADER:
+  Content-Security-Policy: 
+    default-src 'self';
+    script-src 'self' https://trusted.cdn.com 'nonce-random123';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' data: https://images.example.com;
+    connect-src 'self' https://api.example.com;
+    frame-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    upgrade-insecure-requests;
+
+IMPLEMENTATION:
+  Node.js:   Helmet middleware (helmet.contentSecurityPolicy)
+  Python:    django-csp or FastAPI custom middleware
+  Rails:     config.content_security_policy
+
+PRO-TIP: Use Content-Security-Policy-Report-Only first to find violations without breaking the site.
 ```
 
 ---

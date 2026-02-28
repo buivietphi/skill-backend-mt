@@ -70,7 +70,7 @@ const fail = m => log(`  ${c.red}\u2717${c.reset} ${m}`);
 
 function banner() {
   log(`\n${c.bold}${c.cyan}  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510`);
-  log(`  \u2502  \uD83D\uDD27 @buivietphi/skill-backend-mt v1.1.0          \u2502`);
+  log(`  \u2502  \uD83D\uDD27 @buivietphi/skill-backend-mt v1.1.2          \u2502`);
   log(`  \u2502  Master Senior Backend Engineer                  \u2502`);
   log(`  \u2502                                                  \u2502`);
   log(`  \u2502  Claude \u00B7 Cline \u00B7 Roo Code \u00B7 Cursor \u00B7 Windsurf  \u2502`);

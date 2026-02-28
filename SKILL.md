@@ -1,7 +1,7 @@
 ---
 name: skill-backend-mt
 description: "Master Senior Backend Engineer. Patterns from 30+ production repos (200k+ GitHub stars: NestJS, Next.js, Fastify, Django, FastAPI, Spring Boot, Laravel, Express, Prisma, TypeORM). Use when: building backend features, fixing backend bugs, reviewing backend code, backend architecture, API design, database patterns, NestJS, Next.js, Express, Vue.js, Django, FastAPI, Spring Boot, Laravel, Go, Ruby, Rust, microservices, security audit, code review, deployment. Two modes: (1) default = pre-built production patterns, (2) 'project' = reads current project and adapts."
-version: "1.1.0"
+version: "1.1.2"
 author: buivietphi
 priority: high
 user-invocable: true
@@ -176,6 +176,15 @@ USER REQUEST                    → ACTION (Read tool required)
 
 "Cache / Redis / performance"   → Read: shared/performance-optimization.md
                                   then: caching strategy → implement → invalidation
+
+"Multi-tenant / SaaS / tenant"  → Read: shared/multi-tenant.md
+                                  then: isolation strategy → middleware → scoped queries
+
+"SSE / streaming / real-time"   → Read: shared/api-design.md (SSE section)
+                                  then: SSE endpoint → event stream → client handling
+
+"Feature flag / toggle"         → Read: shared/ci-cd.md (Feature Flags section)
+                                  then: flag strategy → implementation → rollout
 
 "Write/run tests"               → Read: shared/testing-strategy.md
                                   then: unit + integration + E2E per framework
@@ -1217,7 +1226,7 @@ DEPENDENT TASKS → Run sequentially:
 
 ```
 CORE (auto-loaded — ~28,080 tokens total):
-  SKILL.md                              51,877 bytes  ~12,970 tokens
+  SKILL.md                              56,573 bytes  ~14,140 tokens
   shared/bug-detection.md               22,209 bytes   ~5,550 tokens
   shared/prompt-engineering.md          11,718 bytes   ~2,930 tokens
   shared/code-review.md                 26,528 bytes   ~6,630 tokens
@@ -1246,6 +1255,7 @@ SHARED (on-demand — ~560-4,620 tokens each):
   shared/testing-strategy.md             5,629 bytes  ~1,410 tokens
   shared/version-management.md           4,923 bytes  ~1,230 tokens
   shared/ai-dlc-workflow.md              9,371 bytes  ~2,340 tokens
+  shared/multi-tenant.md                 7,200 bytes  ~1,800 tokens
   shared/common-pitfalls.md              4,443 bytes  ~1,110 tokens
   shared/agent-rules-template.md         2,916 bytes    ~730 tokens
   shared/document-analysis.md            2,236 bytes    ~560 tokens

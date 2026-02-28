@@ -38,10 +38,13 @@ async create(dto: CreateOrderDto, currentUser: User): Promise<OrderResponseDto> 
 
   // 3. EXECUTE in transaction (multi-step = transaction)
   const order = await this.prisma.$transaction(async (tx) => {
-    // Check inventory
+    // Check inventory (BATCH QUERY - NO N+1)
+    const productIds = dto.items.map(i => i.productId);
+    const products = await tx.product.findMany({ where: { id: { in: productIds } } });
+    if (products.length !== productIds.length) throw new NotFoundException('Some products not found');
+
     for (const item of dto.items) {
-      const product = await tx.product.findUnique({ where: { id: item.productId } });
-      if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
+      const product = products.find(p => p.id === item.productId);
       if (product.stock < item.quantity) {
         throw new BadRequestException(`Insufficient stock for ${product.name}`);
       }
@@ -58,7 +61,7 @@ async create(dto: CreateOrderDto, currentUser: User): Promise<OrderResponseDto> 
       include: { items: true },
     });
 
-    // Decrement stock
+    // Decrement stock (bulk update if ORM supports, otherwise loop in transaction)
     for (const item of dto.items) {
       await tx.product.update({
         where: { id: item.productId },
@@ -93,9 +96,17 @@ async def create_order(self, dto: CreateOrderDTO, current_user: User) -> OrderRe
 
     # 3. EXECUTE in transaction
     async with self.db.transaction():
+        # Check inventory (BATCH QUERY - NO N+1)
+        product_ids = [item.product_id for item in dto.items]
+        products = await self.product_repo.get_by_ids(product_ids)
+        product_map = {p.id: p for p in products}
+
+        if len(products) != len(product_ids):
+            raise NotFoundException("Some products not found")
+
         for item in dto.items:
-            product = await self.product_repo.get_by_id(item.product_id)
-            if not product or product.stock < item.quantity:
+            product = product_map.get(item.product_id)
+            if product.stock < item.quantity:
                 raise BadRequestException(f"Insufficient stock for {product.name}")
 
         order = await self.order_repo.create(

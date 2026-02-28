@@ -419,3 +419,100 @@ WHEN user gives multiple tasks in one message:
   ⛔ NEVER skip a task because you forgot — use the task list
   ⛔ NEVER combine tasks that should be separate changes
 ```
+
+---
+
+## Ultra-Long Spec Handling
+
+> When user provides >500 words of requirements, mixed with complaints, context, tangents, and self-contradictions.
+
+```
+DETECTION:
+  □ User message > 500 words
+  □ Contains 5+ distinct requirements
+  □ Contains self-contradictions ("do X... actually no, do Y")
+  □ Mixes requirements with complaints/context/history
+
+PROTOCOL:
+
+  STEP 1: TRIAGE — separate signal from noise
+    REQUIREMENTS: [extract only actionable items]
+    CONTEXT: [background info — useful but not actionable]
+    COMPLAINTS: [user frustration — acknowledge but don't act on]
+    CONTRADICTIONS: [flag X vs Y — ask which one]
+    OFF-TOPIC: [ignore politely]
+
+  STEP 2: CHUNK into groups (max 5 items per group)
+    Group 1: [related requirements]
+    Group 2: [related requirements]
+    ...
+
+  STEP 3: SUMMARIZE BACK (mandatory for >500 words)
+    "I extracted [N] requirements from your message:
+
+     **Group 1: [name]**
+       1. [requirement]
+       2. [requirement]
+
+     **Group 2: [name]**
+       3. [requirement]
+       4. [requirement]
+
+     **Noted but not actionable:**
+       • [context/complaint — acknowledged]
+
+     **Needs clarification:**
+       • You said [X] but also [Y] — which one?
+
+     Start with Group 1?"
+
+  STEP 4: WORK through groups sequentially with checkpoints
+
+  ⛔ NEVER process >500 word spec without summarizing back
+  ⛔ NEVER guess on contradictions — always ask
+  ✅ ALWAYS separate requirements from complaints/context
+  ✅ ALWAYS chunk into manageable groups of ≤5 items
+```
+
+---
+
+## External Reference Protocol
+
+> When user references external sources: Figma designs, open-source repos, blog posts, documentation, screenshots from other apps.
+
+```
+REFERENCE TYPES:
+
+  TYPE 1: "sửa giống bên kia" / "make it like X" (internal reference)
+    → X is another module IN this project
+    → SCAN: Find the referenced module → Extract patterns → Apply
+    → Easy — this is standard Project Mode
+
+  TYPE 2: "làm giống như cái này" + [URL / screenshot] (external reference)
+    → X is an external source (Figma, GitHub, blog)
+    → PROTOCOL:
+      1. CAN you access the reference?
+         - URL → WebSearch or Read to understand
+         - Screenshot → Analyze image for: data structure, UI fields, API shape
+         - GitHub repo → Read relevant files
+      2. EXTRACT what's relevant:
+         - Data model (entities, fields, relationships)
+         - API shape (endpoints, request/response format)
+         - Business rules (conditions, validations)
+         - UI ≠ Backend (don't copy frontend logic into backend)
+      3. ADAPT to current project:
+         - Use THIS project's conventions (naming, folder structure, ORM)
+         - Use THIS project's error handling pattern
+         - Don't copy external code style — translate to local style
+      4. FLAG differences:
+         "Reference uses [X], but your project uses [Y]. I'll adapt to [Y]."
+
+  TYPE 3: "xem cái doc này rồi implement" (spec document reference)
+    → Read: shared/document-analysis.md
+    → Parse document → Extract structure → Present → Scaffold
+
+  ⛔ NEVER copy external code verbatim into the project
+  ⛔ NEVER assume external conventions match local conventions
+  ✅ ALWAYS adapt external reference to local project style
+  ✅ ALWAYS flag when you make adaptation decisions
+```

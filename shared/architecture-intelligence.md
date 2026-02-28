@@ -161,6 +161,35 @@ WHEN TO AVOID:
   ⛔ Eventual consistency is unacceptable
 ```
 
+### 4.5 Event Sourcing
+
+```
+Instead of storing the CURRENT STATE (e.g., account balance = $100),
+store EVERY EVENT that led to the state (Deposit $50, Deposit $70, Withdraw $20)
+
+EVENT STORE TABLE:
+  CREATE TABLE events (
+    id BIGSERIAL PRIMARY KEY,
+    aggregate_id UUID NOT NULL,          -- The entity ID (e.g., account_id)
+    aggregate_type VARCHAR(50) NOT NULL, -- e.g., 'Account'
+    event_type VARCHAR(100) NOT NULL,    -- e.g., 'MoneyDeposited'
+    version INT NOT NULL,                -- Monotonically increasing per aggregate
+    payload JSONB NOT NULL,              -- { amount: 50 }
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (aggregate_id, version)       -- Prevents concurrent modification
+  );
+
+PROJECTION (Read Model):
+  Process events chronologically to build the current state.
+  Save current state to a standard table (accounts) for fast querying.
+
+WHEN TO USE:
+  ✅ Accounting / Financial ledgers (need absolute audit trail)
+  ✅ Systems where "how we got here" is as important as "where we are"
+  ✅ Complex domains requiring time-travel debugging
+  ⛔ Simple CRUD (massive over-engineering)
+```
+
 ---
 
 ### 5. Vertical Slice Architecture

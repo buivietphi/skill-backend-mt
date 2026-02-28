@@ -1,6 +1,6 @@
 {
   "name": "@buivietphi/skill-backend-mt",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Master Senior Backend Engineer — AI agent skill with production patterns from 30+ top repos (200k+ GitHub stars). NestJS, Next.js, Express, Vue.js, Django, FastAPI, Spring Boot, Laravel, Go, Ruby, Rust. Trained from research of top 53k+ star skill repos + system prompts from 7 major AI tools.",
   "keywords": [
     "claude-code", "claude-skill", "cursor-rules", "cline-rules", "windsurf-rules",

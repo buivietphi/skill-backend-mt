@@ -118,6 +118,88 @@ const sdk = new NodeSDK({
 sdk.start();
 ```
 
+### Setup (Python / FastAPI + OpenTelemetry)
+```python
+# tracing.py
+from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+
+def setup_tracing(app, engine):
+    provider = TracerProvider()
+    exporter = OTLPSpanExporter(endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+    trace.set_tracer_provider(provider)
+
+    # Auto-instrument FastAPI, SQLAlchemy, HTTP client
+    FastAPIInstrumentor.instrument_app(app)
+    SQLAlchemyInstrumentor().instrument(engine=engine)
+    HTTPXClientInstrumentor().instrument()
+```
+
+### Setup (Go + OpenTelemetry)
+```go
+// tracing/tracing.go
+func InitTracer(serviceName string) (*sdktrace.TracerProvider, error) {
+    exporter, err := otlptracegrpc.New(context.Background(),
+        otlptracegrpc.WithEndpoint(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")),
+        otlptracegrpc.WithInsecure(),
+    )
+    if err != nil { return nil, err }
+
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(resource.NewWithAttributes(
+            semconv.SchemaURL,
+            semconv.ServiceNameKey.String(serviceName),
+        )),
+    )
+    otel.SetTracerProvider(tp)
+    return tp, nil
+}
+```
+
+### Jaeger / Tempo (Docker Compose for local dev)
+```yaml
+# docker-compose.yml — add to existing services
+  jaeger:
+    image: jaegertracing/all-in-one:1.53
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC
+      - "4318:4318"     # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+```
+
+### Custom Span Example
+```typescript
+// Add custom spans for business-critical operations
+const tracer = trace.getTracer('payment-service');
+
+async function processPayment(orderId: string, amount: number) {
+  return tracer.startActiveSpan('process-payment', async (span) => {
+    span.setAttribute('order.id', orderId);
+    span.setAttribute('payment.amount', amount);
+    try {
+      const result = await stripeClient.charge(amount);
+      span.setAttribute('payment.status', result.status);
+      return result;
+    } catch (error) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+      span.recordException(error);
+      throw error;
+    } finally {
+      span.end();
+    }
+  });
+}
+```
+
 ### Key Span Attributes
 ```
 http.method:       GET, POST, etc.

@@ -141,7 +141,7 @@ These agents load rules from project-level files. Run `--init` to generate auto-
 ```yaml
 skill:
   name: skill-backend-mt
-  version: "1.1.0"
+  version: "1.1.2"
   author: buivietphi
   category: engineering
   tags:
@@ -312,7 +312,7 @@ USER REQUEST                    → FILES TO LOAD
 {
   "id": "skill-backend-mt",
   "name": "skill-backend-mt",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "author": "buivietphi",
   "category": "engineering",
   "description": "Master Senior Backend Engineer. Patterns from 30+ production repos (200k+ GitHub stars: NestJS, Next.js, Fastify, Django, FastAPI, Spring Boot, Laravel, Express, Prisma, TypeORM). Cardinal rules, self-critique loops, leverage pyramid, verification-first, decision matrix, codebase scan strategy, grounded code review (anti-false-positive), intent analysis, spec interpretation, implementation patterns. NestJS, Next.js, Express, Vue.js, Django, FastAPI, Spring Boot, Laravel, Go, Ruby, Rust.",

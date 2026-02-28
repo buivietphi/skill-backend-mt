@@ -322,6 +322,31 @@ ISOLATION LEVELS:
 RULE: Use the lowest isolation level that meets your needs.
 ```
 
+### Primary-Replica Routing (Read-Heavy Scale)
+```
+ARCHITECTURE:
+  Primary (Master) DB: Handles all INSERT, UPDATE, DELETE + critical reads
+  Replica (Slave) DBs: Handle non-critical SELECT queries. Async replication.
+
+IMPLEMENTATION:
+  ✅ Keep Read-Routing at the infrastructure or framework layer (not business logic).
+  ✅ Be aware of replication lag (replica might be 50ms-1s behind primary).
+
+FRAMEWORK PATTERNS:
+  NestJS/TypeORM:
+    Use TypeORM native replication config:
+    { type: 'postgres', replication: { master: {...}, slaves: [{...}, {...}] } }
+  Django:
+    Use database routers: class PrimaryReplicaRouter
+  Spring Boot:
+    @Transactional(readOnly = true) → routes to replica via AbstractRoutingDataSource
+
+REPLICATION LAG HANDLING:
+  - Immediately after a user updates their profile, read from PRIMARY for the next 5s.
+  - OR: return the local state optimistic update to the UI.
+  ⛔ Never route a read to a replica immediately after a write in the same request flow.
+```
+
 ---
 
 ## Data Integrity Protocol

@@ -278,3 +278,233 @@ Error:      thiserror, anyhow
 ⛔ Don't clone unnecessarily (borrow when possible)
 ⛔ Don't use unsafe unless absolutely necessary
 ```
+
+### Rust Error Handling (Production)
+```rust
+// errors/mod.rs — Custom error types with thiserror
+use thiserror::Error;
+use axum::response::{IntoResponse, Response};
+use axum::http::StatusCode;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("Resource not found: {0}")]
+    NotFound(String),
+    #[error("Validation error: {0}")]
+    Validation(String),
+    #[error("Unauthorized")]
+    Unauthorized,
+    #[error("Conflict: {0}")]
+    Conflict(String),
+    #[error("Internal error")]
+    Internal(#[from] anyhow::Error),
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let (status, code, message) = match &self {
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, "NOT_FOUND", msg.clone()),
+            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, "VALIDATION_ERROR", msg.clone()),
+            AppError::Unauthorized => (StatusCode::UNAUTHORIZED, "UNAUTHORIZED", "Unauthorized".into()),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg.clone()),
+            AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Internal error".into()),
+        };
+        (status, Json(json!({ "code": code, "message": message }))).into_response()
+    }
+}
+```
+
+---
+
+## Ruby on Rails — Extended Patterns
+
+### Active Record Scopes & Concerns
+```ruby
+# models/user.rb
+class User < ApplicationRecord
+  # Scopes for common queries
+  scope :active, -> { where(is_active: true) }
+  scope :by_role, ->(role) { where(role: role) }
+  scope :recent, -> { order(created_at: :desc) }
+  scope :search, ->(q) { where("name ILIKE ? OR email ILIKE ?", "%#{q}%", "%#{q}%") }
+
+  # Validations
+  validates :email, presence: true, uniqueness: { scope: :tenant_id }
+  validates :name, presence: true, length: { minimum: 2, maximum: 100 }
+  validates :password, length: { minimum: 8 }, if: :password_required?
+
+  # Associations
+  has_many :orders, dependent: :restrict_with_error
+  belongs_to :tenant
+
+  # Callbacks (use sparingly)
+  before_save :normalize_email
+  after_create :send_welcome_email, if: :confirmed?
+
+  private
+
+  def normalize_email
+    self.email = email.downcase.strip
+  end
+end
+
+# Concern for soft delete (shared across models)
+# app/models/concerns/soft_deletable.rb
+module SoftDeletable
+  extend ActiveSupport::Concern
+  included do
+    scope :active, -> { where(deleted_at: nil) }
+    scope :deleted, -> { where.not(deleted_at: nil) }
+  end
+
+  def soft_delete!
+    update!(deleted_at: Time.current)
+  end
+
+  def restore!
+    update!(deleted_at: nil)
+  end
+end
+```
+
+### Rails API Error Handling
+```ruby
+# app/controllers/concerns/error_handler.rb
+module ErrorHandler
+  extend ActiveSupport::Concern
+
+  included do
+    rescue_from ActiveRecord::RecordNotFound, with: :not_found
+    rescue_from ActiveRecord::RecordInvalid, with: :unprocessable
+    rescue_from ActionController::ParameterMissing, with: :bad_request
+    rescue_from Pundit::NotAuthorizedError, with: :forbidden
+  end
+
+  private
+
+  def not_found(e)
+    render json: { code: "NOT_FOUND", message: e.message }, status: :not_found
+  end
+
+  def unprocessable(e)
+    render json: { code: "VALIDATION_ERROR", message: e.message,
+                   details: e.record.errors.full_messages }, status: :unprocessable_entity
+  end
+
+  def forbidden(_e)
+    render json: { code: "FORBIDDEN", message: "Not authorized" }, status: :forbidden
+  end
+
+  def bad_request(e)
+    render json: { code: "BAD_REQUEST", message: e.message }, status: :bad_request
+  end
+end
+```
+
+### Rails Testing (RSpec + FactoryBot)
+```ruby
+# spec/services/users/create_service_spec.rb
+RSpec.describe Users::CreateService do
+  let(:tenant) { create(:tenant) }
+  let(:valid_params) { attributes_for(:user).merge(tenant_id: tenant.id) }
+
+  describe ".call" do
+    context "with valid params" do
+      it "creates a user" do
+        result = described_class.call(valid_params)
+        expect(result).to be_success
+        expect(result.user).to be_persisted
+        expect(result.user.email).to eq(valid_params[:email])
+      end
+    end
+
+    context "with duplicate email" do
+      before { create(:user, email: valid_params[:email], tenant: tenant) }
+
+      it "returns failure" do
+        result = described_class.call(valid_params)
+        expect(result).not_to be_success
+        expect(result.errors).to include(/already been taken/)
+      end
+    end
+  end
+end
+
+# spec/requests/api/v1/users_spec.rb
+RSpec.describe "Users API", type: :request do
+  let(:token) { generate_jwt(user) }
+  let(:headers) { { "Authorization" => "Bearer #{token}" } }
+
+  describe "GET /api/v1/users" do
+    it "returns paginated users" do
+      create_list(:user, 25, tenant: user.tenant)
+      get "/api/v1/users", headers: headers, params: { page: 1 }
+      expect(response).to have_http_status(:ok)
+      expect(json_body["data"].count).to eq(20) # default page size
+    end
+  end
+end
+```
+
+---
+
+## Go — Extended Patterns
+
+### Go Middleware Chain
+```go
+// middleware/chain.go
+func Chain(handler http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
+    for i := len(middlewares) - 1; i >= 0; i-- {
+        handler = middlewares[i](handler)
+    }
+    return handler
+}
+
+// middleware/auth.go
+func AuthMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        token := r.Header.Get("Authorization")
+        if token == "" {
+            http.Error(w, `{"code":"UNAUTHORIZED"}`, http.StatusUnauthorized)
+            return
+        }
+        claims, err := validateJWT(strings.TrimPrefix(token, "Bearer "))
+        if err != nil {
+            http.Error(w, `{"code":"UNAUTHORIZED"}`, http.StatusUnauthorized)
+            return
+        }
+        ctx := context.WithValue(r.Context(), "user", claims)
+        next.ServeHTTP(w, r.WithContext(ctx))
+    })
+}
+
+// Usage:
+mux := http.NewServeMux()
+handler := Chain(mux, LoggingMiddleware, AuthMiddleware, CORSMiddleware)
+```
+
+### Go Table-Driven Tests
+```go
+func TestUserService_FindByID(t *testing.T) {
+    tests := []struct {
+        name    string
+        id      string
+        want    *model.User
+        wantErr error
+    }{
+        {name: "found", id: "123", want: &model.User{ID: "123", Email: "test@test.com"}, wantErr: nil},
+        {name: "not found", id: "999", want: nil, wantErr: ErrNotFound},
+        {name: "empty id", id: "", want: nil, wantErr: ErrInvalidID},
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            svc := NewUserService(mockRepo)
+            got, err := svc.FindByID(context.Background(), tt.id)
+            assert.Equal(t, tt.wantErr, err)
+            assert.Equal(t, tt.want, got)
+        })
+    }
+}
+```
+

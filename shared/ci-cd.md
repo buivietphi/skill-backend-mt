@@ -333,3 +333,107 @@ spec:
                 port:
                   number: 80
 ```
+
+---
+
+## Feature Flags
+
+### Simple DB-Based Flags
+```sql
+CREATE TABLE feature_flags (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,       -- 'new-checkout-flow'
+  description TEXT,
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  rollout_percentage INT DEFAULT 0,         -- 0-100 gradual rollout
+  allowed_users JSONB DEFAULT '[]',         -- specific user IDs
+  allowed_tenants JSONB DEFAULT '[]',       -- specific tenant IDs
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Feature Flag Service
+```typescript
+// services/feature-flag.service.ts
+@Injectable()
+export class FeatureFlagService {
+  constructor(
+    private readonly flagRepo: FeatureFlagRepository,
+    private readonly cache: CacheService,
+  ) {}
+
+  async isEnabled(flagName: string, context?: { userId?: string; tenantId?: string }): Promise<boolean> {
+    // Cache flags (refresh every 30s)
+    const flag = await this.cache.getOrSet(
+      `flag:${flagName}`,
+      () => this.flagRepo.findByName(flagName),
+      30,
+    );
+
+    if (!flag) return false;
+    if (!flag.isEnabled) return false;
+
+    // Specific user/tenant override
+    if (context?.userId && flag.allowedUsers.includes(context.userId)) return true;
+    if (context?.tenantId && flag.allowedTenants.includes(context.tenantId)) return true;
+
+    // Percentage rollout (deterministic per user)
+    if (flag.rolloutPercentage > 0 && context?.userId) {
+      const hash = this.hashUserId(context.userId);
+      return (hash % 100) < flag.rolloutPercentage;
+    }
+
+    return flag.isEnabled;
+  }
+
+  private hashUserId(userId: string): number {
+    let hash = 0;
+    for (const char of userId) { hash = ((hash << 5) - hash) + char.charCodeAt(0); }
+    return Math.abs(hash);
+  }
+}
+
+// Usage in service:
+if (await this.featureFlags.isEnabled('new-checkout', { userId: user.id })) {
+  return this.newCheckoutFlow(order);
+} else {
+  return this.legacyCheckoutFlow(order);
+}
+```
+
+### Feature Flag Libraries
+```
+SELF-HOSTED:
+  Unleash       → Open-source, self-hosted, SDKs for all languages
+  Flagsmith     → Open-source, UI dashboard, A/B testing
+  GrowthBook    → Open-source, A/B testing + feature flags
+
+MANAGED (SaaS):
+  LaunchDarkly  → Enterprise, real-time updates, targeting rules
+  Split.io      → Enterprise, experimentation platform
+  Statsig       → Free tier, A/B testing + feature gates
+
+SIMPLE:
+  DB-based      → Good enough for <50 flags, no external dependency
+  .env flags    → Simplest, requires redeploy to change
+
+DECISION:
+  <10 flags, simple on/off     → .env or DB-based
+  10-50 flags, gradual rollout → Unleash / GrowthBook (self-hosted)
+  50+ flags, enterprise        → LaunchDarkly / Split.io
+```
+
+### Feature Flag Best Practices
+```
+✅ Clean up flags after full rollout (remove old code path)
+✅ Use descriptive names: 'new-checkout-v2', not 'flag-1'
+✅ Log which flag variant was served (for debugging)
+✅ Test BOTH paths (flag on AND flag off)
+✅ Default to OFF for new flags (fail-safe)
+⛔ Don't nest flags (if flag A AND flag B → too complex)
+⛔ Don't use flags for permanent config (use config instead)
+⛔ Don't leave stale flags in code (tech debt)
+```
+
